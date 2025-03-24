@@ -1,4 +1,4 @@
-// 网络通讯的客户端程序。
+// 网络通讯的客户端程序
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
