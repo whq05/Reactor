@@ -1,7 +1,7 @@
 #include "Channel.h"
 
 //构造函数
-Channel::Channel(int fd, Epoll *ep) : fd_(fd), ep_(ep)
+Channel::Channel(int fd, EventLoop *loop) : fd_(fd), loop_(loop)
 {
 
 }
@@ -24,7 +24,7 @@ void Channel::useet() // 采用边缘触发
 void Channel::enablereading() // 让epoll监视fd_的读事件
 {
     events_ |= EPOLLIN;
-    ep_->updatechannel(this);
+    loop_->updatechannel(this);
 }
 void Channel::setinepoll() // 把inepoll_成员的值设置为true
 {
@@ -81,7 +81,7 @@ void Channel::newconnection(Socket *servsock)       // 处理新客户端连接�
             printf("accept client(fd=%d,ip=%s,port=%d) ok.\n", clientsock->fd(), clientaddr.ip(), clientaddr.port());
 
             // 为新客户端连接准备读事件，并添加到epoll中
-            Channel *clientchannel = new Channel(clientsock->fd(), ep_); // 这里new出来的对象没有释放，这个问题以后再解决
+            Channel *clientchannel = new Channel(clientsock->fd(), loop_); // 这里new出来的对象没有释放，这个问题以后再解决
             clientchannel->setreadcallback(std::bind(&Channel::onmessage, clientchannel));
             clientchannel->useet();                             // 客户端连上来的fd采用边缘触发
             clientchannel->enablereading();                              // 让epoll_wait()监视clientchannel的读事件

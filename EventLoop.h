@@ -1,6 +1,9 @@
 #pragma once
 #include "Epoll.h"
 
+class Channel;
+class Epoll;
+
 class EventLoop
 {
 private:
@@ -10,5 +13,8 @@ public:
     ~EventLoop();       // 在析构函数中销毁ep_
 
     void run();         // 运行事件循环
-    Epoll *ep();        // 返回ep_成员
+
+    void updatechannel(Channel *ch); 
+
+
 };

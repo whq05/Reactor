@@ -14,6 +14,7 @@
 #include "Epoll.h"
 #include "Channel.h"
 #include "EventLoop.h"
+#include "TcpServer.h"
 
 int main(int argc, char *argv[])
 {
@@ -24,6 +25,7 @@ int main(int argc, char *argv[])
         return -1;
     }
 
+    /*
     Socket servsock(createnonblocking());
     InetAddress servaddr(argv[1], atoi(argv[2])); // 服务端的地址和协议。
     servsock.setreuseaddr(true);
@@ -40,16 +42,11 @@ int main(int argc, char *argv[])
     servchannel->enablereading();       // 让epoll_wait()监视servchannel的读事件
 
     loop.run();
-    /*
-    while (true) // 事件循环
-    {
-        std::vector<Channel *> channels = ep.loop(); // 存放epoll_wait()返回事件
-        for (auto &ch : channels)
-        {
-            ch->handleevent(&servsock); // 处理epoll_wait()返回的事件
-        }
-    }
     */
+
+    TcpServer tcpserver(argv[1], atoi(argv[2]));
+
+    tcpserver.start();      // 运行事件循环
 
     return 0;
 }
