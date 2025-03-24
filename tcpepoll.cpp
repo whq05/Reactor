@@ -13,6 +13,7 @@
 #include "Socket.h"
 #include "Epoll.h"
 #include "Channel.h"
+#include "EventLoop.h"
 
 int main(int argc, char *argv[])
 {
@@ -32,12 +33,14 @@ int main(int argc, char *argv[])
     servsock.bind(servaddr);
     servsock.listen();
 
-
-    Epoll ep;
-    Channel *servchannel = new Channel(servsock.fd(), &ep, true); // 这里new出来的对象没有释放，这个问题以后再解决
+    EventLoop loop;
+    // Epoll ep;
+    Channel *servchannel = new Channel(servsock.fd(), loop.ep()); // 这里new出来的对象没有释放，这个问题以后再解决
     servchannel->setreadcallback(std::bind(&Channel::newconnection, servchannel, &servsock)); 
     servchannel->enablereading();       // 让epoll_wait()监视servchannel的读事件
 
+    loop.run();
+    /*
     while (true) // 事件循环
     {
         std::vector<Channel *> channels = ep.loop(); // 存放epoll_wait()返回事件
@@ -46,6 +49,7 @@ int main(int argc, char *argv[])
             ch->handleevent(&servsock); // 处理epoll_wait()返回的事件
         }
     }
+    */
 
     return 0;
 }
