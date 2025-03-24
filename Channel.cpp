@@ -58,8 +58,31 @@ void Channel::handleevent(Socket *servsock)
     }
     else if (revents_ & (EPOLLIN | EPOLLPRI)) // 接收缓冲区中有数据可以读
     {
+        /*
         if (islisten_) // 如果是listenfd有事件，表示有新的客户端连上来
         {
+            newconnection(servsock); 
+        }
+        else // 如果是客户端连接的fd有事件
+        {
+            onmessage();
+        }
+        */
+        readcallback_();
+    }
+    else if (events_ & EPOLLOUT) // 有数据需要写，暂时没有代码
+    {
+    }
+    else // 其它事件，都视为错误
+    {
+        printf("client(eventfd=%d) error.\n", fd_);
+        close(fd_); // 关闭客户端的fd
+    }
+}
+
+
+void Channel::newconnection(Socket *servsock)       // 处理新客户端连接请求
+{
             InetAddress clientaddr; // 客户端的地址和协议。
             // 注意，clientsock只能new出来，不能在栈上，否则析构函数会关闭fd。
             // 还有，这里new出来的对象没有释放，这个问题以后再解决
@@ -69,11 +92,13 @@ void Channel::handleevent(Socket *servsock)
 
             // 为新客户端连接准备读事件，并添加到epoll中
             Channel *clientchannel = new Channel(clientsock->fd(), ep_, false); // 这里new出来的对象没有释放，这个问题以后再解决
+            clientchannel->setreadcallback(std::bind(&Channel::onmessage, clientchannel));
             clientchannel->useet();                             // 客户端连上来的fd采用边缘触发
             clientchannel->enablereading();                              // 让epoll_wait()监视clientchannel的读事件
-        }
-        else // 如果是客户端连接的fd有事件
-        {
+}
+
+void Channel::onmessage()       // 处理对端发送过来的消息
+{
             char buffer[1024];
             while (true) // 由于使用非阻塞IO，一次读取buffer大小数据，直到全部的数据读取完毕
             {
@@ -100,14 +125,9 @@ void Channel::handleevent(Socket *servsock)
                     break;
                 }
             }
-        }
-    }
-    else if (events_ & EPOLLOUT) // 有数据需要写，暂时没有代码
-    {
-    }
-    else // 其它事件，都视为错误
-    {
-        printf("client(eventfd=%d) error.\n", fd_);
-        close(fd_); // 关闭客户端的fd
-    }
+}
+
+void Channel::setreadcallback(std::function<void()> fn)     // 设置fd_读事件的回调函数
+{
+    readcallback_ = fn;
 }
