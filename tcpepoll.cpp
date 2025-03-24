@@ -12,6 +12,7 @@
 #include "InetAddress.h"
 #include "Socket.h"
 #include "Epoll.h"
+#include "Channel.h"
 
 int main(int argc, char *argv[])
 {
@@ -75,8 +76,9 @@ int main(int argc, char *argv[])
     */
 
     Epoll ep;
-    ep.addfd(servsock.fd(), EPOLLIN); // 让epoll监视listenfd的读事件，采用水平触发
-    std::vector<epoll_event> evs;     // 存放epoll_wait()返回事件
+    // ep.addfd(servsock.fd(), EPOLLIN); // 让epoll监视listenfd的读事件，采用水平触发
+    Channel *servchannel = new Channel(servsock.fd(), &ep); // 这里new出来的对象没有释放，这个问题以后再解决
+    servchannel->enablereading(); // 让epoll_wait()监视servchannel的读事件
 
     while (true) // 事件循环
     {
@@ -97,17 +99,18 @@ int main(int argc, char *argv[])
             continue;
         }
         */
-        evs = ep.loop(); // 等待监视的fd有事件发生
-        for (auto &ev : evs)
+        std::vector<Channel *> channels = ep.loop();     // 存放epoll_wait()返回事件
+        // evs = ep.loop(); // 等待监视的fd有事件发生
+        for (auto &ch : channels)
         {
-            if (ev.events & EPOLLRDHUP) // 对方已关闭，有些系统检测不到，可以使用EPOLLIN，recv()返回0
+            if (ch->revents() & EPOLLRDHUP) // 对方已关闭，有些系统检测不到，可以使用EPOLLIN，recv()返回0
             {
-                printf("client(eventfd=%d) disconnected.\n", ev.data.fd);
-                close(ev.data.fd); // 关闭客户端的fd
+                printf("client(eventfd=%d) disconnected.\n", ch->fd());
+                close(ch->fd()); // 关闭客户端的fd
             }
-            else if (ev.events & (EPOLLIN | EPOLLPRI)) // 接收缓冲区中有数据可以读
+            else if (ch->revents() & (EPOLLIN | EPOLLPRI)) // 接收缓冲区中有数据可以读
             {
-                if (ev.data.fd == servsock.fd()) // 如果是listenfd有事件，表示有新的客户端连上来
+                if (ch == servchannel) // 如果是listenfd有事件，表示有新的客户端连上来
                 {
                     /*
                     sockaddr_in peeraddr;
@@ -127,7 +130,9 @@ int main(int argc, char *argv[])
                     ev.events = EPOLLIN | EPOLLET; // 边缘触发
                     epoll_ctl(epollfd, EPOLL_CTL_ADD, clientsock->fd(), &ev);
                     */
-                    ep.addfd(clientsock->fd(), EPOLLIN | EPOLLET);      // 客户端连上来的fd采用边缘触发
+                    // ep.addfd(clientsock->fd(), EPOLLIN | EPOLLET);      // 客户端连上来的fd采用边缘触发
+                    Channel *clientchannel = new Channel(clientsock->fd(), &ep);     // 这里new出来的对象没有释放，这个问题以后再解决
+                    clientchannel->enablereading(); // 让epoll_wait()监视clientchannel的读事件
                 }
                 else // 如果是客户端连接的fd有事件
                 {
@@ -135,12 +140,12 @@ int main(int argc, char *argv[])
                     while (true) // 由于使用非阻塞IO，一次读取buffer大小数据，直到全部的数据读取完毕
                     {
                         bzero(&buffer, sizeof(buffer));
-                        ssize_t nread = read(ev.data.fd, buffer, sizeof(buffer));
+                        ssize_t nread = read(ch->fd(), buffer, sizeof(buffer));
                         if (nread > 0) // 成功的读取到了数据
                         {
                             // 把接收到的报文内容原封不动的发回去
-                            printf("recv(eventfd=%d):%s\n", ev.data.fd, buffer);
-                            send(ev.data.fd, buffer, strlen(buffer), 0);
+                            printf("recv(eventfd=%d):%s\n", ch->fd(), buffer);
+                            send(ch->fd(), buffer, strlen(buffer), 0);
                         }
                         else if (nread == -1 && errno == EINTR) // 读取数据的时候被信号中断，继续读取
                         {
@@ -152,20 +157,20 @@ int main(int argc, char *argv[])
                         }
                         else if (nread == 0) // 客户端连接已断开
                         {
-                            printf("client(eventfd=%d) disconnected.\n", ev.data.fd);
-                            close(ev.data.fd); // 关闭客户端的fd
+                            printf("client(eventfd=%d) disconnected.\n", ch->fd());
+                            close(ch->fd()); // 关闭客户端的fd
                             break;
                         }
                     }
                 }
             }
-            else if (ev.events & EPOLLOUT) // 有数据需要写，暂时没有代码
+            else if (ch->events() & EPOLLOUT) // 有数据需要写，暂时没有代码
             {
             }
             else // 其它事件，都视为错误
             {
-                printf("client(eventfd=%d) error.\n", ev.data.fd);
-                close(ev.data.fd); // 关闭客户端的fd
+                printf("client(eventfd=%d) error.\n", ch->fd());
+                close(ch->fd()); // 关闭客户端的fd
             }
         }
     }

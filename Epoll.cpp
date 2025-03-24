@@ -13,6 +13,7 @@ Epoll::~Epoll()
     close(epollfd_);           // 在析构函数中关闭epollfd_
 }
 
+/*
 // 把fd和它需要监视的事件添加到红黑树上
 void Epoll::addfd(int fd, uint32_t op)                             
 {
@@ -25,7 +26,35 @@ void Epoll::addfd(int fd, uint32_t op)
         printf("epoll_ctl() failed(%d).\n",errno); exit(-1);
     }
 }
+*/
 
+void Epoll::updatechannel(Channel *ch)                    // 把channel添加/更新到红黑树上，channel中有fd，也有需要监视的事件
+{
+    epoll_event ev;      // 声明事件的数据结构
+    ev.data.ptr = ch;       // 指定Channel
+    ev.events = ch->events();       // 指定事件
+
+    if (ch->inepoll())      // 如果channel已经在树上了
+    {
+        if (epoll_ctl(epollfd_,EPOLL_CTL_MOD,ch->fd(),&ev)==-1)
+        {
+            perror("epoll_ctl() failed.\n"); 
+            exit(-1);
+        }
+    }
+    else                    // 如果channel不在树上
+    {
+        if (epoll_ctl(epollfd_, EPOLL_CTL_ADD, ch->fd(), &ev) == -1)
+        {
+            perror("epoll_ctl() failed.\n");
+            exit(-1);
+        }
+        ch->setinepoll();       // 把channel的inepoll_成员设置为true
+    }
+}
+
+
+/*
 // 运行epoll_wait()，等待事件的发生，已发生的事件用vector容器返回
 std::vector<epoll_event> Epoll::loop(int timeout)   
 {
@@ -53,4 +82,35 @@ std::vector<epoll_event> Epoll::loop(int timeout)
     }
 
     return evs;
+}
+*/
+
+std::vector<Channel *> Epoll::loop(int timeout)        // 运行epoll_wait()，等待事件的发生，已发生的事件用vector容器返回
+{
+    std::vector<Channel *> channels;        // 存放epoll_wait()返回的事件
+
+    bzero(events_,sizeof(events_));
+    int infds=epoll_wait(epollfd_,events_,MaxEvents,timeout);       // 等待监视的fd有事件发生
+
+    // 返回失败
+    if (infds < 0)
+    {
+        perror("epoll_wait() failed"); exit(-1);
+    }
+
+    // 超时
+    if (infds == 0)
+    {
+        printf("epoll_wait() timeout.\n"); return channels;
+    }
+
+    // 如果infds>0，表示有事件发生的fd的数量
+    for (int ii=0;ii<infds;ii++)       // 遍历epoll返回的数组events_
+    {
+        Channel *ch = (Channel *)events_[ii].data.ptr;      // 取出已发生事件的channel
+        ch->setrevents(events_[ii].events);                 // 设置channel的revents_成员
+        channels.push_back(ch);
+    }
+
+    return channels;    
 }
