@@ -77,8 +77,8 @@ int main(int argc, char *argv[])
 
     Epoll ep;
     // ep.addfd(servsock.fd(), EPOLLIN); // 让epoll监视listenfd的读事件，采用水平触发
-    Channel *servchannel = new Channel(servsock.fd(), &ep); // 这里new出来的对象没有释放，这个问题以后再解决
-    servchannel->enablereading(); // 让epoll_wait()监视servchannel的读事件
+    Channel *servchannel = new Channel(servsock.fd(), &ep, true); // 这里new出来的对象没有释放，这个问题以后再解决
+    servchannel->enablereading();                                 // 让epoll_wait()监视servchannel的读事件
 
     while (true) // 事件循环
     {
@@ -99,10 +99,12 @@ int main(int argc, char *argv[])
             continue;
         }
         */
-        std::vector<Channel *> channels = ep.loop();     // 存放epoll_wait()返回事件
+        std::vector<Channel *> channels = ep.loop(); // 存放epoll_wait()返回事件
         // evs = ep.loop(); // 等待监视的fd有事件发生
         for (auto &ch : channels)
         {
+            ch->handleevent(&servsock); // 处理epoll_wait()返回的事件
+            /*
             if (ch->revents() & EPOLLRDHUP) // 对方已关闭，有些系统检测不到，可以使用EPOLLIN，recv()返回0
             {
                 printf("client(eventfd=%d) disconnected.\n", ch->fd());
@@ -112,27 +114,17 @@ int main(int argc, char *argv[])
             {
                 if (ch == servchannel) // 如果是listenfd有事件，表示有新的客户端连上来
                 {
-                    /*
-                    sockaddr_in peeraddr;
-                    socklen_t len = sizeof(peeraddr);
-                    int clientfd = accept4(listenfd, (sockaddr *)&peeraddr, &len, SOCK_NONBLOCK);
-                    */
                     InetAddress clientaddr; // 客户端的地址和协议。
                     // 注意，clientsock只能new出来，不能在栈上，否则析构函数会关闭fd。
                     // 还有，这里new出来的对象没有释放，这个问题以后再解决
-                    Socket *clientsock = new Socket(servsock.accept(clientaddr));
 
+                    Socket *clientsock = new Socket(servsock.accept(clientaddr));
                     printf("accept client(fd=%d,ip=%s,port=%d) ok.\n", clientsock->fd(), clientaddr.ip(), clientaddr.port());
 
-                    /*
                     // 为新客户端连接准备读事件，并添加到epoll中
-                    ev.data.fd = clientsock->fd();
-                    ev.events = EPOLLIN | EPOLLET; // 边缘触发
-                    epoll_ctl(epollfd, EPOLL_CTL_ADD, clientsock->fd(), &ev);
-                    */
-                    // ep.addfd(clientsock->fd(), EPOLLIN | EPOLLET);      // 客户端连上来的fd采用边缘触发
-                    Channel *clientchannel = new Channel(clientsock->fd(), &ep);     // 这里new出来的对象没有释放，这个问题以后再解决
-                    clientchannel->enablereading(); // 让epoll_wait()监视clientchannel的读事件
+                    Channel *clientchannel = new Channel(clientsock->fd(), &ep, false); // 这里new出来的对象没有释放，这个问题以后再解决
+                    clientchannel->useet();                             // 客户端连上来的fd采用边缘触发
+                    clientchannel->enablereading();                                     // 让epoll_wait()监视clientchannel的读事件
                 }
                 else // 如果是客户端连接的fd有事件
                 {
@@ -172,6 +164,7 @@ int main(int argc, char *argv[])
                 printf("client(eventfd=%d) error.\n", ch->fd());
                 close(ch->fd()); // 关闭客户端的fd
             }
+            */
         }
     }
 
