@@ -14,3 +14,18 @@ Connection::~Connection()
     delete clientsock_;
     delete clientchannel_;
 }
+
+int Connection::fd() const                 // 返回客户端的fd
+{
+    return clientsock_->fd();
+}
+
+std::string Connection::ip() const      // 返回客户端的ip
+{
+    return clientsock_->ip();
+}
+
+uint16_t Connection::port() const       // 返回客户端的port
+{
+    return clientsock_->port();
+}

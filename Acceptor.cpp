@@ -33,7 +33,7 @@ void Acceptor::newconnection()
 
     Socket *clientsock = new Socket(servsock_->accept(clientaddr));
 
-    printf("accept client(fd=%d,ip=%s,port=%d) ok.\n", clientsock->fd(), clientaddr.ip(), clientaddr.port());
+    // printf("accept client(fd=%d,ip=%s,port=%d) ok.\n", clientsock->fd(), clientaddr.ip(), clientaddr.port());
 
     /*
     clientsock->setreuseaddr(true);

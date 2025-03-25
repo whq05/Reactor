@@ -30,6 +30,16 @@ int Socket::fd() const // 返回fd_成员
     return fd_;
 }
 
+std::string Socket::ip() const                // 返回ip_成员
+{
+    return ip_;
+}
+
+uint16_t Socket::port() const                 // 返回port_成员
+{
+    return port_;
+}
+
 void Socket::settcpnodelay(bool on)
 {
     int optval = on ? 1 : 0;
@@ -81,6 +91,10 @@ int Socket::accept(InetAddress &clientaddr)
     int clientfd = accept4(fd_, (sockaddr *)&peeraddr, &len, SOCK_NONBLOCK);
 
     clientaddr.setaddr(peeraddr); // 客户端的地址和协议
+    
+   // 注意：以下两行代码有问题，这个问题将会被修复，以后再说，先不要管它
+    ip_ = clientaddr.ip();
+    port_ = clientaddr.port();
 
     return clientfd;
 }

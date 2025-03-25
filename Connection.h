@@ -16,4 +16,8 @@ public:
     Connection(EventLoop *loop, Socket *clientsock);
     ~Connection();
 
+    int fd() const;                 // 返回客户端的fd
+    std::string ip() const;      // 返回客户端的ip
+    uint16_t port() const;       // 返回客户端的port
+
 };
