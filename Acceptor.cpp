@@ -32,19 +32,6 @@ void Acceptor::newconnection()
     // 还有，这里new出来的对象没有释放，这个问题以后再解决
 
     Socket *clientsock = new Socket(servsock_->accept(clientaddr));
-
-    // printf("accept client(fd=%d,ip=%s,port=%d) ok.\n", clientsock->fd(), clientaddr.ip(), clientaddr.port());
-
-    /*
-    clientsock->setreuseaddr(true);
-    // 为新客户端连接准备读事件，并添加到epoll中
-    Channel *clientchannel = new Channel(clientsock->fd(), loop_); // 这里new出来的对象没有释放，这个问题以后再解决
-    clientchannel->setreadcallback(std::bind(&Channel::onmessage, clientchannel));
-    clientchannel->useet();         // 客户端连上来的fd采用边缘触发
-    clientchannel->enablereading(); // 让epoll_wait()监视clientchannel的读事件
-    */
-
-    // Connection *conn = new Connection(loop_, clientsock);        // 这里new出来的对象没有释放，这个问题以后再解决
     newconnectioncb_(clientsock);
 
 }

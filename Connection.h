@@ -20,4 +20,7 @@ public:
     std::string ip() const;      // 返回客户端的ip
     uint16_t port() const;       // 返回客户端的port
 
+    void closecallback();       // TCP连接关闭（断开）的回调函数，供Channel回调
+    void errorcallback();       // TCP连接错误的回调函数，供Channel回调
+
 };

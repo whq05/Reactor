@@ -64,27 +64,11 @@ void Channel::handleevent()
     }
     else // 其它事件，都视为错误
     {
-        printf("client(eventfd=%d) error.\n", fd_);
-        close(fd_); // 关闭客户端的fd
+        // printf("client(eventfd=%d) error.\n", fd_);
+        // close(fd_); // 关闭客户端的fd
+        errorcallback_();
     }
 }
-
-/*
-#include "Connection.h"
-
-void Channel::newconnection(Socket *servsock) // 处理新客户端连接请求
-{
-    InetAddress clientaddr; // 客户端的地址和协议。
-    // 注意，clientsock只能new出来，不能在栈上，否则析构函数会关闭fd。
-    // 还有，这里new出来的对象没有释放，这个问题以后再解决
-    Socket *clientsock = new Socket(servsock->accept(clientaddr));
-
-    printf("accept client(fd=%d,ip=%s,port=%d) ok.\n", clientsock->fd(), clientaddr.ip(), clientaddr.port());
-
-   Connection *conn = new Connection(loop_, clientsock);        // 这里new出来的对象没有释放，这个问题以后再解决
-
-}
-*/
 
 void Channel::onmessage() // 处理对端发送过来的消息
 {
@@ -109,8 +93,9 @@ void Channel::onmessage() // 处理对端发送过来的消息
         }
         else if (nread == 0) // 客户端连接已断开
         {
-            printf("client(eventfd=%d) disconnected.\n", fd_);
-            close(fd_); // 关闭客户端的fd
+            // printf("client(eventfd=%d) disconnected.\n", fd_);
+            // close(fd_); // 关闭客户端的fd
+            closecallback_();
             break;
         }
     }
@@ -119,4 +104,14 @@ void Channel::onmessage() // 处理对端发送过来的消息
 void Channel::setreadcallback(std::function<void()> fn) // 设置fd_读事件的回调函数
 {
     readcallback_ = fn;
+}
+
+void Channel::setclosecallback(std::function<void()> fn)    // 设置关闭fd_的回调函数
+{
+    closecallback_ = fn;
+}
+
+void Channel::seterrorcallback(std::function<void()> fn)    // 设置fd_发生了错误的回调函数
+{
+    errorcallback_ = fn;
 }
