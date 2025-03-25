@@ -33,7 +33,7 @@ public:
 
     void handleevent();     // 事件处理函数，epoll_wait()返回的时候，执行它
 
-    void newconnection(Socket *servsock);       // 处理新客户端连接请求
+    // void newconnection(Socket *servsock);       // 处理新客户端连接请求
     void onmessage();       // 处理对端发送过来的消息
     void setreadcallback(std::function<void()> fn);     // 设置fd_读事件的回调函数
 };

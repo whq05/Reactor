@@ -2,21 +2,48 @@
 
 Acceptor::Acceptor(EventLoop *loop, const std::string &ip, uint16_t port) : loop_(loop)
 {
-    Socket *servsock = new Socket(createnonblocking());
+    servsock_ = new Socket(createnonblocking());
     InetAddress servaddr(ip, port); // 服务端的地址和协议。
-    servsock->setreuseaddr(true);
-    servsock->settcpnodelay(true);
-    servsock->setreuseport(true);
-    servsock->setkeepalive(true);
-    servsock->bind(servaddr);
-    servsock->listen();
+    servsock_->setreuseaddr(true);
+    servsock_->settcpnodelay(true);
+    servsock_->setreuseport(true);
+    servsock_->setkeepalive(true);
+    servsock_->bind(servaddr);
+    servsock_->listen();
 
-    Channel *servchannel = new Channel(servsock->fd(), loop_); // 这里new出来的对象没有释放，这个问题以后再解决
-    servchannel->setreadcallback(std::bind(&Channel::newconnection, servchannel, servsock)); 
-    servchannel->enablereading();       // 让epoll_wait()监视servchannel的读事件
+    Channel *acceptchannel_ = new Channel(servsock_->fd(), loop_); // 这里new出来的对象没有释放，这个问题以后再解决
+    // acceptchannel_->setreadcallback(std::bind(&Channel::newconnection,acceptchannel_,servsock_));
+    acceptchannel_->setreadcallback(std::bind(&Acceptor::newconnection, this)); 
+    acceptchannel_->enablereading();       // 让epoll_wait()监视servchannel的读事件
 }
 Acceptor::~Acceptor()
 {
     delete servsock_;
-    delete servchannel_;
+    // printf("delete servsock_ ok.\n");
+    delete acceptchannel_;
+}
+
+#include "Connection.h"
+// 处理新客户端连接请求
+void Acceptor::newconnection()   
+{
+    InetAddress clientaddr; // 客户端的地址和协议。
+    // 注意，clientsock只能new出来，不能在栈上，否则析构函数会关闭fd。
+    // 还有，这里new出来的对象没有释放，这个问题以后再解决
+
+    Socket *clientsock = new Socket(servsock_->accept(clientaddr));
+
+    printf("accept client(fd=%d,ip=%s,port=%d) ok.\n", clientsock->fd(), clientaddr.ip(), clientaddr.port());
+
+    /*
+    clientsock->setreuseaddr(true);
+    // 为新客户端连接准备读事件，并添加到epoll中
+    Channel *clientchannel = new Channel(clientsock->fd(), loop_); // 这里new出来的对象没有释放，这个问题以后再解决
+    clientchannel->setreadcallback(std::bind(&Channel::onmessage, clientchannel));
+    clientchannel->useet();         // 客户端连上来的fd采用边缘触发
+    clientchannel->enablereading(); // 让epoll_wait()监视clientchannel的读事件
+    */
+
+   Connection *conn = new Connection(loop_, clientsock);        // 这里new出来的对象没有释放，这个问题以后再解决
+
 }
