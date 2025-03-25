@@ -1,8 +1,7 @@
-#include "TcpServer.h"
+#include "Acceptor.h"
 
-TcpServer::TcpServer(const std::string &ip, uint16_t port)
+Acceptor::Acceptor(EventLoop *loop, const std::string &ip, uint16_t port) : loop_(loop)
 {
-    /*
     Socket *servsock = new Socket(createnonblocking());
     InetAddress servaddr(ip, port); // 服务端的地址和协议。
     servsock->setreuseaddr(true);
@@ -12,20 +11,12 @@ TcpServer::TcpServer(const std::string &ip, uint16_t port)
     servsock->bind(servaddr);
     servsock->listen();
 
-    Channel *servchannel = new Channel(servsock->fd(), &loop_); // 这里new出来的对象没有释放，这个问题以后再解决
+    Channel *servchannel = new Channel(servsock->fd(), loop_); // 这里new出来的对象没有释放，这个问题以后再解决
     servchannel->setreadcallback(std::bind(&Channel::newconnection, servchannel, servsock)); 
     servchannel->enablereading();       // 让epoll_wait()监视servchannel的读事件
-    */
-
-    acceptor_ = new Acceptor(&loop_, ip, port);
 }
-
-TcpServer::~TcpServer()
+Acceptor::~Acceptor()
 {
-    delete acceptor_;
-}
-
-void TcpServer::start()       // 运行事件循环
-{
-    loop_.run();
+    delete servsock_;
+    delete servchannel_;
 }
