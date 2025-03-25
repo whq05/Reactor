@@ -24,9 +24,27 @@ void TcpServer::start()       // 运行事件循环
 
 void TcpServer::newconnection(Socket *clientsock)     // 处理新客户端连接请求
 {
-    Connection *conn = new Connection(&loop_, clientsock);        
+    Connection *conn = new Connection(&loop_, clientsock);
+    conn->setclosecallback(std::bind(&TcpServer::closeconnection, this, std::placeholders::_1));
+    conn->seterrorcallback(std::bind(&TcpServer::errorconnection, this, std::placeholders::_1));        
 
     printf("accept client(fd=%d,ip=%s,port=%d) ok.\n", conn->fd(), conn->ip().c_str(), conn->port());
 
     conns_[conn->fd()] = conn;      // 把conn存放map容器中
+}
+
+void TcpServer::closeconnection(Connection *conn)     // 关闭客户端的连接，在Connection类中回调此函数
+{
+    printf("client(eventfd=%d) disconnected.\n", conn->fd());
+    // close(fd());        // 关闭客户端的fd
+    conns_.erase(conn->fd());       // 从map中删除conn
+    delete conn;
+}
+
+void TcpServer::errorconnection(Connection *conn)     // 客户端的连接错误，在Connection类中回调此函数
+{
+    printf("client(eventfd=%d) error.\n", conn->fd());
+    // close(fd());            // 关闭客户端的fd
+    conns_.erase(conn->fd());       // 从map中删除conn
+    delete conn;
 }
