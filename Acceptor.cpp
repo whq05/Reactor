@@ -44,6 +44,13 @@ void Acceptor::newconnection()
     clientchannel->enablereading(); // 让epoll_wait()监视clientchannel的读事件
     */
 
-   Connection *conn = new Connection(loop_, clientsock);        // 这里new出来的对象没有释放，这个问题以后再解决
+    // Connection *conn = new Connection(loop_, clientsock);        // 这里new出来的对象没有释放，这个问题以后再解决
+    newconnectioncb_(clientsock);
 
+}
+
+// 设置处理新客户端连接请求的回调函数，将在创建Acceptor对象的时候（TcpServer类的构造函数中）设置
+void Acceptor::setnewconnectioncb(std::function<void(Socket*)> fn)
+{
+    newconnectioncb_ = fn;
 }
