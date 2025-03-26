@@ -60,5 +60,6 @@ void TcpServer::onmessage(Connection *conn, std::string message)     // 处理�
     std::string tmpbuf((char*)&len, 4);     // 把报文头部填充到回应报文中
     tmpbuf.append(message);                 // 把报文内容填充到回应报文中
 
-    send(conn->fd(), tmpbuf.c_str(), tmpbuf.size(), 0);       // 把临时缓冲区中的数据直接send()出去
+    conn->send(tmpbuf.data(), tmpbuf.size());       // 把临时缓冲区中的数据发送出去
+    // printf("TcpServer::onmessage\n");
 }

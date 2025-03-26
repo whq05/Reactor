@@ -12,14 +12,12 @@ Acceptor::Acceptor(EventLoop *loop, const std::string &ip, uint16_t port) : loop
     servsock_->listen();
 
     Channel *acceptchannel_ = new Channel(servsock_->fd(), loop_); 
-    // acceptchannel_->setreadcallback(std::bind(&Channel::newconnection,acceptchannel_,servsock_));
     acceptchannel_->setreadcallback(std::bind(&Acceptor::newconnection, this)); 
     acceptchannel_->enablereading();       // 让epoll_wait()监视servchannel的读事件
 }
 Acceptor::~Acceptor()
 {
     delete servsock_;
-    // printf("delete servsock_ ok.\n");
     delete acceptchannel_;
 }
 

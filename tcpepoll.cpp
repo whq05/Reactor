@@ -24,26 +24,7 @@ int main(int argc, char *argv[])
         printf("example: ./tcpepoll 192.168.206.132 5010\n\n");
         return -1;
     }
-
-    /*
-    Socket servsock(createnonblocking());
-    InetAddress servaddr(argv[1], atoi(argv[2])); // 服务端的地址和协议。
-    servsock.setreuseaddr(true);
-    servsock.settcpnodelay(true);
-    servsock.setreuseport(true);
-    servsock.setkeepalive(true);
-    servsock.bind(servaddr);
-    servsock.listen();
-
-    EventLoop loop;
-    // Epoll ep;
-    Channel *servchannel = new Channel(servsock.fd(), loop.ep()); // 这里new出来的对象没有释放，这个问题以后再解决
-    servchannel->setreadcallback(std::bind(&Channel::newconnection, servchannel, &servsock)); 
-    servchannel->enablereading();       // 让epoll_wait()监视servchannel的读事件
-
-    loop.run();
-    */
-
+    
     TcpServer tcpserver(argv[1], atoi(argv[2]));
 
     tcpserver.start();      // 运行事件循环

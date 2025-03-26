@@ -7,6 +7,7 @@ Connection::Connection(EventLoop *loop, Socket *clientsock) : loop_(loop), clien
     clientchannel_->setreadcallback(std::bind(&Connection::onmessage, this));
     clientchannel_->setclosecallback(std::bind(&Connection::closecallback, this));
     clientchannel_->seterrorcallback(std::bind(&Connection::errorcallback, this));
+    clientchannel_->setwritecallback(std::bind(&Connection::writecallback, this));
     clientchannel_->useet();                 // 客户端连上来的fd采用边缘触发
     clientchannel_->enablereading();        // 让epoll_wait()监视clientchannel的读事件
 }
@@ -34,14 +35,10 @@ uint16_t Connection::port() const       // 返回客户端的port
 
 void Connection::closecallback()       // TCP连接关闭（断开）的回调函数，供Channel回调
 {
-    // printf("client(eventfd=%d) disconnected.\n", fd());
-    // close(fd());        // 关闭客户端的fd
     closecallback_(this);     // 回调TcpServer::closeconnection()
 }
 void Connection::errorcallback()       // TCP连接错误的回调函数，供Channel回调
 {
-    // printf("client(eventfd=%d) error.\n",fd());
-    // close(fd());            // 关闭客户端的fd
     errorcallback_(this);     // 回调TcpServer::errorconnection()
 }
 
@@ -92,18 +89,9 @@ void Connection::onmessage()
                 //////////////////////////////////////////////////////////////   
 
                 printf("message (eventfd=%d):%s\n",fd(),message.c_str());
-
-                /*
-                // 在这里，将经过若干步骤的运算
-                message = "reply:" + message; 
-                len = message.size();                   // 计算回应报文的大小
-                std::string tmpbuf((char*)&len, 4);     // 把报文头部填充到回应报文中
-                tmpbuf.append(message);                 // 把报文内容填充到回应报文中
-
-                send(fd(), tmpbuf.c_str(), tmpbuf.size(), 0);       // 把临时缓冲区中的数据直接send()出去
-                */
-                onmessagecallback_(this, message);      // 回调TcpServer::onmessage()
+                onmessagecallback_(this, message);      // 回调TcpServer::onmessage()处理客户端的请求消息
             }
+            break;
         }
         else if (nread == 0) // 客户端连接已断开
         {
@@ -111,4 +99,23 @@ void Connection::onmessage()
             break;
         }
     }
+}
+
+// 发送数据
+void Connection::send(const char *data, size_t size)
+{
+    outputbuffer_.append(data, size);   // 把需要发送的数据保存到Connection的发送缓冲区中
+    clientchannel_->enablewriting();    // 注册写事件
+    // printf("Connection::send\n");
+}
+
+void Connection::writecallback()      // 处理写事件的回调函数，供Channel回调
+{    
+    // printf("1Connection::writecallback\n");
+    int writen = ::send(fd(), outputbuffer_.data(), outputbuffer_.size(), 0);   // 尝试把outputbuffer_中的数据全部发送出去
+    if (writen > 0) outputbuffer_.erase(0, writen);     // 把已经发送出去的数据从outputbuffer_中删除
+
+    // 如果发送缓冲区中没有数据了，表示数据已发送完成，不再关注写事件
+    if (outputbuffer_.size() == 0) clientchannel_->disablewriting();
+    // printf("2Connection::writecallback\n");
 }
