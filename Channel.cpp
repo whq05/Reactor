@@ -52,8 +52,9 @@ void Channel::handleevent()
 {
     if (revents_ & EPOLLRDHUP) // 对方已关闭，有些系统检测不到，可以使用EPOLLIN，recv()返回0
     {
-        printf("client(eventfd=%d) disconnected.\n", fd_);
-        close(fd_); // 关闭客户端的fd
+        // printf("client(eventfd=%d) disconnected.\n", fd_);
+        // close(fd_); // 关闭客户端的fd
+        closecallback_();   // 回调Connection::closecallback()
     }
     else if (revents_ & (EPOLLIN | EPOLLPRI)) // 接收缓冲区中有数据可以读
     {
@@ -70,6 +71,7 @@ void Channel::handleevent()
     }
 }
 
+/*
 void Channel::onmessage() // 处理对端发送过来的消息
 {
     char buffer[1024];
@@ -100,6 +102,7 @@ void Channel::onmessage() // 处理对端发送过来的消息
         }
     }
 }
+*/
 
 void Channel::setreadcallback(std::function<void()> fn) // 设置fd_读事件的回调函数
 {

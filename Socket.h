@@ -25,6 +25,7 @@ public:
     int fd() const;                         // 返回fd_成员
     std::string ip() const;                // 返回ip_成员
     uint16_t port() const;                 // 返回port_成员
+    void setipport(const std::string &ip, uint16_t port);        // 设置ip_和port_成员
 
     void setreuseaddr(bool on);             // 设置SO_REUSEADDR选项，true-打开，false-关闭
     void setreuseport(bool on);             // 设置SO_REUSEPORT选项

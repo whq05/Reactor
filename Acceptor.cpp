@@ -11,7 +11,7 @@ Acceptor::Acceptor(EventLoop *loop, const std::string &ip, uint16_t port) : loop
     servsock_->bind(servaddr);
     servsock_->listen();
 
-    Channel *acceptchannel_ = new Channel(servsock_->fd(), loop_); // 这里new出来的对象没有释放，这个问题以后再解决
+    Channel *acceptchannel_ = new Channel(servsock_->fd(), loop_); 
     // acceptchannel_->setreadcallback(std::bind(&Channel::newconnection,acceptchannel_,servsock_));
     acceptchannel_->setreadcallback(std::bind(&Acceptor::newconnection, this)); 
     acceptchannel_->enablereading();       // 让epoll_wait()监视servchannel的读事件
@@ -32,6 +32,8 @@ void Acceptor::newconnection()
     // 还有，这里new出来的对象没有释放，这个问题以后再解决
 
     Socket *clientsock = new Socket(servsock_->accept(clientaddr));
+    clientsock->setipport(clientaddr.ip(), clientaddr.port());
+
     newconnectioncb_(clientsock);
 
 }

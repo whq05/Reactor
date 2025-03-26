@@ -22,7 +22,8 @@ void TcpServer::start()       // 运行事件循环
     loop_.run();
 }    
 
-void TcpServer::newconnection(Socket *clientsock)     // 处理新客户端连接请求
+// 处理新客户端连接请求
+void TcpServer::newconnection(Socket *clientsock)  
 {
     Connection *conn = new Connection(&loop_, clientsock);
     conn->setclosecallback(std::bind(&TcpServer::closeconnection, this, std::placeholders::_1));
