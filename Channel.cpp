@@ -80,7 +80,6 @@ void Channel::handleevent()
     }
     else if (revents_ & EPOLLOUT) // 有数据需要写，暂时没有代码
     {
-        printf("EPOLLOUT\n");
         writecallback_();       // 回调Connection::writecallback()
     }
     else // 其它事件，都视为错误

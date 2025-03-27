@@ -4,6 +4,8 @@ TcpServer::TcpServer(const std::string &ip, uint16_t port)
 {
     acceptor_ = new Acceptor(&loop_, ip, port);
     acceptor_->setnewconnectioncb(std::bind(&TcpServer::newconnection, this, std::placeholders::_1));
+    loop_.setepolltimeoutcallback(std::bind(&TcpServer::epolltimeout, this, std::placeholders::_1));
+
 }
 
 TcpServer::~TcpServer()
@@ -28,7 +30,8 @@ void TcpServer::newconnection(Socket *clientsock)
     Connection *conn = new Connection(&loop_, clientsock);
     conn->setclosecallback(std::bind(&TcpServer::closeconnection, this, std::placeholders::_1));
     conn->seterrorcallback(std::bind(&TcpServer::errorconnection, this, std::placeholders::_1));
-    conn->setonmessagecallback(std::bind(&TcpServer::onmessage, this, std::placeholders::_1, std::placeholders::_2));        
+    conn->setonmessagecallback(std::bind(&TcpServer::onmessage, this, std::placeholders::_1, std::placeholders::_2)); 
+    conn->setsendcompletecallback(std::bind(&TcpServer::sendcomplete, this, std::placeholders::_1));       
 
     printf("accept client(fd=%d,ip=%s,port=%d) ok.\n", conn->fd(), conn->ip().c_str(), conn->port());
 
@@ -38,7 +41,6 @@ void TcpServer::newconnection(Socket *clientsock)
 void TcpServer::closeconnection(Connection *conn)     // 关闭客户端的连接，在Connection类中回调此函数
 {
     printf("client(eventfd=%d) disconnected.\n", conn->fd());
-    // close(fd());        // 关闭客户端的fd
     conns_.erase(conn->fd());       // 从map中删除conn
     delete conn;
 }
@@ -46,7 +48,6 @@ void TcpServer::closeconnection(Connection *conn)     // 关闭客户端的连�
 void TcpServer::errorconnection(Connection *conn)     // 客户端的连接错误，在Connection类中回调此函数
 {
     printf("client(eventfd=%d) error.\n", conn->fd());
-    // close(fd());            // 关闭客户端的fd
     conns_.erase(conn->fd());       // 从map中删除conn
     delete conn;
 }
@@ -61,5 +62,20 @@ void TcpServer::onmessage(Connection *conn, std::string message)     // 处理�
     tmpbuf.append(message);                 // 把报文内容填充到回应报文中
 
     conn->send(tmpbuf.data(), tmpbuf.size());       // 把临时缓冲区中的数据发送出去
-    // printf("TcpServer::onmessage\n");
+}
+
+// 数据发送完成后，在Connection类中回调此函数
+void TcpServer::sendcomplete(Connection *conn)           
+{
+    printf("send complete.\n");
+
+    // 根据业务的需求，在这里可以增加其它的代码
+}
+
+// epoll_wait()超时，在EventLoop类中回调此函数
+void TcpServer::epolltimeout(EventLoop *loop)     
+{
+    printf("epoll_wait() timeout.\n");
+
+    // 根据业务的需求，在这里可以增加其它的代码
 }

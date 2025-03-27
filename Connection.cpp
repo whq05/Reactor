@@ -57,6 +57,11 @@ void Connection::setonmessagecallback(std::function<void(Connection*, std::strin
     onmessagecallback_ = fn;
 }
 
+void Connection::setsendcompletecallback(std::function<void(Connection*)> fn)            // 发送数据完成后的回调函数
+{
+    sendcompletecallback_ = fn;
+}
+
 // 处理对端发送过来的消息
 void Connection::onmessage()           
 {
@@ -106,16 +111,18 @@ void Connection::send(const char *data, size_t size)
 {
     outputbuffer_.append(data, size);   // 把需要发送的数据保存到Connection的发送缓冲区中
     clientchannel_->enablewriting();    // 注册写事件
-    // printf("Connection::send\n");
 }
 
 void Connection::writecallback()      // 处理写事件的回调函数，供Channel回调
 {    
-    // printf("1Connection::writecallback\n");
     int writen = ::send(fd(), outputbuffer_.data(), outputbuffer_.size(), 0);   // 尝试把outputbuffer_中的数据全部发送出去
     if (writen > 0) outputbuffer_.erase(0, writen);     // 把已经发送出去的数据从outputbuffer_中删除
 
     // 如果发送缓冲区中没有数据了，表示数据已发送完成，不再关注写事件
-    if (outputbuffer_.size() == 0) clientchannel_->disablewriting();
-    // printf("2Connection::writecallback\n");
+    if (outputbuffer_.size() == 0) 
+    {
+        clientchannel_->disablewriting();
+        sendcompletecallback_(this);
+    }
+
 }

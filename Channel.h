@@ -39,8 +39,6 @@ public:
 
     void handleevent();     // 事件处理函数，epoll_wait()返回的时候，执行它
 
-    // void onmessage();       // 处理对端发送过来的消息
-
     void setreadcallback(std::function<void()> fn);     // 设置fd_读事件的回调函数
     void setclosecallback(std::function<void()> fn);    // 设置关闭fd_的回调函数
     void seterrorcallback(std::function<void()> fn);    // 设置fd_发生了错误的回调函数
