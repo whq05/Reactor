@@ -15,6 +15,7 @@
 #include "Channel.h"
 #include "EventLoop.h"
 #include "TcpServer.h"
+#include "EchoServer.h"
 
 int main(int argc, char *argv[])
 {
@@ -25,9 +26,11 @@ int main(int argc, char *argv[])
         return -1;
     }
     
-    TcpServer tcpserver(argv[1], atoi(argv[2]));
+    // TcpServer tcpserver(argv[1], atoi(argv[2]));
+    // tcpserver.start();      // 运行事件循环
 
-    tcpserver.start();      // 运行事件循环
+    EchoServer echoserver(argv[1], atoi(argv[2]));
+    echoserver.Start();      // 运行事件循环
 
     return 0;
 }

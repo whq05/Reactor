@@ -33,27 +33,32 @@ void TcpServer::newconnection(Socket *clientsock)
     conn->setonmessagecallback(std::bind(&TcpServer::onmessage, this, std::placeholders::_1, std::placeholders::_2)); 
     conn->setsendcompletecallback(std::bind(&TcpServer::sendcomplete, this, std::placeholders::_1));       
 
-    printf("accept client(fd=%d,ip=%s,port=%d) ok.\n", conn->fd(), conn->ip().c_str(), conn->port());
+    // printf("accept client(fd=%d,ip=%s,port=%d) ok.\n", conn->fd(), conn->ip().c_str(), conn->port());
 
     conns_[conn->fd()] = conn;      // 把conn存放map容器中
+
+    if (newconnectioncb_)   newconnectioncb_(conn);      // 回调EchoServer::HandleNewConnection()
 }
 
 void TcpServer::closeconnection(Connection *conn)     // 关闭客户端的连接，在Connection类中回调此函数
 {
-    printf("client(eventfd=%d) disconnected.\n", conn->fd());
+    if (closeconnectioncb_) closeconnectioncb_(conn);      // 回调EchoServer::HandleClose()
+    // printf("client(eventfd=%d) disconnected.\n", conn->fd());
     conns_.erase(conn->fd());       // 从map中删除conn
     delete conn;
 }
 
 void TcpServer::errorconnection(Connection *conn)     // 客户端的连接错误，在Connection类中回调此函数
 {
-    printf("client(eventfd=%d) error.\n", conn->fd());
+    if (errorconnectioncb_) errorconnectioncb_(conn);      // 回调EchoServer::HandleError()
+    // printf("client(eventfd=%d) error.\n", conn->fd());
     conns_.erase(conn->fd());       // 从map中删除conn
     delete conn;
 }
 
 void TcpServer::onmessage(Connection *conn, std::string message)     // 处理客户端发送过来的消息，在Connection类中回调此函数
 {
+    /*
     // 在这里，将经过若干步骤的运算
     message = "reply:" + message; 
 
@@ -62,20 +67,53 @@ void TcpServer::onmessage(Connection *conn, std::string message)     // 处理�
     tmpbuf.append(message);                 // 把报文内容填充到回应报文中
 
     conn->send(tmpbuf.data(), tmpbuf.size());       // 把临时缓冲区中的数据发送出去
+    */
+
+    if (onmessagecb_) onmessagecb_(conn, message);      // 回调EchoServer::HandleMessage()
 }
 
 // 数据发送完成后，在Connection类中回调此函数
 void TcpServer::sendcomplete(Connection *conn)           
 {
-    printf("send complete.\n");
+    // printf("send complete.\n");
 
-    // 根据业务的需求，在这里可以增加其它的代码
+    if (sendcompletecb_) sendcompletecb_(conn);      // 回调EchoServer::HandleSendComplete()
 }
 
 // epoll_wait()超时，在EventLoop类中回调此函数
 void TcpServer::epolltimeout(EventLoop *loop)     
 {
-    printf("epoll_wait() timeout.\n");
+    // printf("epoll_wait() timeout.\n");
 
-    // 根据业务的需求，在这里可以增加其它的代码
+    if (timeoutcb_) timeoutcb_(loop);      // 回调EchoServer::HandleEpollTimeout()
+}
+
+void TcpServer::setnewconnectioncb(std::function<void(Connection*)> fn)
+{
+    newconnectioncb_ = fn;
+}
+
+void TcpServer::setcloseconnectioncb(std::function<void(Connection*)> fn)
+{
+    closeconnectioncb_ = fn;
+}
+
+void TcpServer::seterrorconnectioncb(std::function<void(Connection*)> fn)
+{
+    errorconnectioncb_ = fn;
+}
+
+void TcpServer::setonmessagecb(std::function<void(Connection*, std::string)> fn)
+{
+    onmessagecb_ = fn;
+}
+
+void TcpServer::setsendcompletecb(std::function<void(Connection*)> fn)
+{
+    sendcompletecb_ = fn;
+}
+
+void TcpServer::settimeoutcb(std::function<void(EventLoop*)> fn)
+{
+    timeoutcb_ = fn;
 }
