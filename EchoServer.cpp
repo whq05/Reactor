@@ -8,22 +8,21 @@ EchoServer::EchoServer(const std::string &ip, const uint16_t port) : tcpserver_(
     tcpserver_.seterrorconnectioncb(std::bind(&EchoServer::HandleError, this, std::placeholders::_1));
     tcpserver_.setonmessagecb(std::bind(&EchoServer::HandleMessage, this, std::placeholders::_1, std::placeholders::_2));
     tcpserver_.setsendcompletecb(std::bind(&EchoServer::HandleSendComplete, this, std::placeholders::_1));
-    tcpserver_.settimeoutcb(std::bind(&EchoServer::HandleTimeout, this, std::placeholders::_1));
+    // tcpserver_.settimeoutcb(std::bind(&EchoServer::HandleTimeout, this, std::placeholders::_1));
 }
 
 EchoServer::~EchoServer()
 {
-
 }
 
 // 启动服务
-void EchoServer::Start()   
+void EchoServer::Start()
 {
     tcpserver_.start();
 }
 
 // 处理新客户端连接请求，在TcpServer类中回调此函数
-void EchoServer::HandleNewConnection(Connection *conn)    
+void EchoServer::HandleNewConnection(Connection *conn)
 {
     std::cout << "New Connection Come in." << std::endl;
 
@@ -31,7 +30,7 @@ void EchoServer::HandleNewConnection(Connection *conn)
 }
 
 // 关闭客户端的连接，在TcpServer类中回调此函数
-void EchoServer::HandleClose(Connection *conn) 
+void EchoServer::HandleClose(Connection *conn)
 {
     std::cout << "EchoServer conn closed." << std::endl;
 
@@ -39,7 +38,7 @@ void EchoServer::HandleClose(Connection *conn)
 }
 
 // 客户端的连接错误，在TcpServer类中回调此函数
-void EchoServer::HandleError(Connection *conn)            
+void EchoServer::HandleError(Connection *conn)
 {
     std::cout << "EchoServer conn error." << std::endl;
 
@@ -47,30 +46,34 @@ void EchoServer::HandleError(Connection *conn)
 }
 
 // 处理客户端的请求报文，在TcpServer类中回调此函数
-void EchoServer::HandleMessage(Connection *conn, std::string message)     
+void EchoServer::HandleMessage(Connection *conn, std::string &message)
 {
     // 在这里，将经过若干步骤的运算
-    message = "reply:" + message; 
+    message = "reply:" + message;
 
+    /*
     int len = message.size();                   // 计算回应报文的大小
     std::string tmpbuf((char*)&len, 4);     // 把报文头部填充到回应报文中
     tmpbuf.append(message);                 // 把报文内容填充到回应报文中
+    */
 
-    conn->send(tmpbuf.data(), tmpbuf.size());       // 把临时缓冲区中的数据发送出去
+    conn->send(message.data(), message.size()); // 把数据发送出去
 }
 
 // 数据发送完成后，在TcpServer类中回调此函数
-void EchoServer::HandleSendComplete(Connection *conn)            
+void EchoServer::HandleSendComplete(Connection *conn)
 {
     std::cout << "Message send complete." << std::endl;
 
     // 根据业务的需求，在这里可以增加其它的代码
 }
 
-// epoll_wait()超时，在EventLoop类中回调此函数
-void EchoServer::HandleTimeout(EventLoop *loop)     
+/*
+// epoll_wait()超时，在TcpServer类中回调此函数
+void EchoServer::HandleTimeout(EventLoop *loop)
 {
     std::cout << "EchoServer timeout." << std::endl;
 
     // 根据业务的需求，在这里可以增加其它的代码
 }
+*/

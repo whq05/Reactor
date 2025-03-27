@@ -56,19 +56,8 @@ void TcpServer::errorconnection(Connection *conn)     // 客户端的连接错�
     delete conn;
 }
 
-void TcpServer::onmessage(Connection *conn, std::string message)     // 处理客户端发送过来的消息，在Connection类中回调此函数
+void TcpServer::onmessage(Connection *conn, std::string &message)     // 处理客户端发送过来的消息，在Connection类中回调此函数
 {
-    /*
-    // 在这里，将经过若干步骤的运算
-    message = "reply:" + message; 
-
-    int len = message.size();                   // 计算回应报文的大小
-    std::string tmpbuf((char*)&len, 4);     // 把报文头部填充到回应报文中
-    tmpbuf.append(message);                 // 把报文内容填充到回应报文中
-
-    conn->send(tmpbuf.data(), tmpbuf.size());       // 把临时缓冲区中的数据发送出去
-    */
-
     if (onmessagecb_) onmessagecb_(conn, message);      // 回调EchoServer::HandleMessage()
 }
 
@@ -103,7 +92,7 @@ void TcpServer::seterrorconnectioncb(std::function<void(Connection*)> fn)
     errorconnectioncb_ = fn;
 }
 
-void TcpServer::setonmessagecb(std::function<void(Connection*, std::string)> fn)
+void TcpServer::setonmessagecb(std::function<void(Connection*, std::string &)> fn)
 {
     onmessagecb_ = fn;
 }
