@@ -1,6 +1,6 @@
 #include "Connection.h"
 
-Connection::Connection(EventLoop *loop, Socket *clientsock) : loop_(loop), clientsock_(clientsock)
+Connection::Connection(EventLoop *loop, Socket *clientsock) : loop_(loop), clientsock_(clientsock), disconnect_(false)
 {
     // 为新客户端连接准备读事件，并添加到epoll中
     clientchannel_ = new Channel(clientsock->fd(), loop_); 
@@ -8,7 +8,7 @@ Connection::Connection(EventLoop *loop, Socket *clientsock) : loop_(loop), clien
     clientchannel_->setclosecallback(std::bind(&Connection::closecallback, this));
     clientchannel_->seterrorcallback(std::bind(&Connection::errorcallback, this));
     clientchannel_->setwritecallback(std::bind(&Connection::writecallback, this));
-    clientchannel_->useet();                 // 客户端连上来的fd采用边缘触发
+    // clientchannel_->useet();                 // 客户端连上来的fd采用边缘触发
     clientchannel_->enablereading();        // 让epoll_wait()监视clientchannel的读事件
 }
 
@@ -36,29 +36,33 @@ uint16_t Connection::port() const       // 返回客户端的port
 
 void Connection::closecallback()       // TCP连接关闭（断开）的回调函数，供Channel回调
 {
-    closecallback_(this);     // 回调TcpServer::closeconnection()
+    disconnect_ = true;
+    clientchannel_->remove();       // 从事件循环中删除Channel
+    closecallback_(shared_from_this());     // 回调TcpServer::closeconnection()
 }
 void Connection::errorcallback()       // TCP连接错误的回调函数，供Channel回调
 {
-    errorcallback_(this);     // 回调TcpServer::errorconnection()
+    disconnect_ = true;
+    clientchannel_->remove();       // 从事件循环中删除Channel
+    errorcallback_(shared_from_this());     // 回调TcpServer::errorconnection()
 }
 
-void Connection::setclosecallback(std::function<void(Connection*)> fn)     // 设置关闭fd_的回调函数
+void Connection::setclosecallback(std::function<void(spConnection)> fn)     // 设置关闭fd_的回调函数
 {
     closecallback_ = fn;
 }
 
-void Connection::seterrorcallback(std::function<void(Connection*)> fn)     // 设置fd_发生了错误的回调函数
+void Connection::seterrorcallback(std::function<void(spConnection)> fn)     // 设置fd_发生了错误的回调函数
 { 
     errorcallback_ = fn;
 }
 
-void Connection::setonmessagecallback(std::function<void(Connection*, std::string&)> fn)     // 设置处理报文的回调函数
+void Connection::setonmessagecallback(std::function<void(spConnection, std::string&)> fn)     // 设置处理报文的回调函数
 {
     onmessagecallback_ = fn;
 }
 
-void Connection::setsendcompletecallback(std::function<void(Connection*)> fn)            // 发送数据完成后的回调函数
+void Connection::setsendcompletecallback(std::function<void(spConnection)> fn)            // 发送数据完成后的回调函数
 {
     sendcompletecallback_ = fn;
 }
@@ -95,13 +99,13 @@ void Connection::onmessage()
                 //////////////////////////////////////////////////////////////   
 
                 printf("message (eventfd=%d):%s\n",fd(),message.c_str());
-                onmessagecallback_(this, message);      // 回调TcpServer::onmessage()处理客户端的请求消息
+                onmessagecallback_(shared_from_this(), message);      // 回调TcpServer::onmessage()处理客户端的请求消息
             }
             break;
         }
         else if (nread == 0) // 客户端连接已断开
         {
-            closecallback();    // 回调TcpServer::closecallback()
+            closecallback();    
             break;
         }
     }
@@ -110,6 +114,11 @@ void Connection::onmessage()
 // 发送数据
 void Connection::send(const char *data, size_t size)
 {
+    if (disconnect_==true) 
+    {  
+        printf("客户端连接已断开了，send()直接返回。\n"); 
+        return;
+    }
     outputbuffer_.appendwithhead(data, size);   // 把需要发送的数据保存到Connection的发送缓冲区中
     clientchannel_->enablewriting();    // 注册写事件
 }
@@ -123,7 +132,7 @@ void Connection::writecallback()      // 处理写事件的回调函数，供Cha
     if (outputbuffer_.size() == 0) 
     {
         clientchannel_->disablewriting();
-        sendcompletecallback_(this);
+        sendcompletecallback_(shared_from_this());
     }
 
 }

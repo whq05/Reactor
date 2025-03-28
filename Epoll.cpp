@@ -14,7 +14,8 @@ Epoll::~Epoll()
     close(epollfd_); // 在析构函数中关闭epollfd_
 }
 
-void Epoll::updatechannel(Channel *ch) // 把channel添加/更新到红黑树上，channel中有fd，也有需要监视的事件
+// 把channel添加/更新到红黑树上，channel中有fd，也有需要监视的事件
+void Epoll::updatechannel(Channel *ch) 
 {
     epoll_event ev;           // 声明事件的数据结构
     ev.data.ptr = ch;         // 指定Channel
@@ -39,7 +40,23 @@ void Epoll::updatechannel(Channel *ch) // 把channel添加/更新到红黑树上
     }
 }
 
-std::vector<Channel *> Epoll::loop(int timeout) // 运行epoll_wait()，等待事件的发生，已发生的事件用vector容器返回
+// 从红黑树上删除channel
+void Epoll::removechannel(Channel *ch)            
+{
+    if (ch->inepoll())  // 如果channel已经在树上了
+    {
+        printf("removechannel()\n");
+
+        if (epoll_ctl(epollfd_, EPOLL_CTL_DEL, ch->fd(), 0) == -1)
+        {
+                perror("epoll_ctl() failed.\n"); 
+                exit(-1);
+        }
+    }
+}
+
+// 运行epoll_wait()，等待事件的发生，已发生的事件用vector容器返回
+std::vector<Channel *> Epoll::loop(int timeout) 
 {
     std::vector<Channel *> channels; // 存放epoll_wait()返回的事件
 

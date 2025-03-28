@@ -31,6 +31,8 @@ public:
     void disablereading();          // 取消读事件
     void enablewriting();           // 让epoll_wait()监视fd_的写事件，注册写事件
     void disablewriting();          // 取消写事件
+    void disableall();              // 取消全部的事件
+    void remove();                  // 从事件循环中删除Channel
     void setinepoll();              // 把inepoll_成员的值设置为true
     void setrevents(uint32_t ev);   // 设置revents_成员的值为参数sv
     bool inepoll();                 // 返回inepoll_成员

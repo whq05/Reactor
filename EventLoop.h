@@ -16,7 +16,8 @@ public:
 
     void run();         // 运行事件循环
 
-    void updatechannel(Channel *ch); 
+    void updatechannel(Channel *ch);        // 把channel添加/更新到红黑树上，channel中有fd，也有需要监视的事件
+    void removechannel(Channel *ch);        // 从红黑树上删除channel
     void setepolltimeoutcallback(std::function<void(EventLoop*)> fn);    // 设置epoll_wait()超时的回调函数
 
 };

@@ -42,6 +42,12 @@ void EventLoop::updatechannel(Channel *ch)
     ep_->updatechannel(ch);
 }
 
+// 从红黑树上删除channel
+void EventLoop::removechannel(Channel *ch)
+{
+    ep_->removechannel(ch);
+}        
+
 // 设置epoll_wait()超时的回调函数
 void EventLoop::setepolltimeoutcallback(std::function<void(EventLoop*)> fn)
 {
