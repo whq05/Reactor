@@ -19,7 +19,7 @@ private:
     std::function<void(Connection *)> newconnectioncb_;            // 回调EchoServer::HandleNewConnection()
     std::function<void(Connection *)> closeconnectioncb_;          // 回调EchoServer::HandleClose()
     std::function<void(Connection *)> errorconnectioncb_;          // 回调EchoServer::HandleError()
-    std::function<void(Connection *, std::string &)> onmessagecb_; // 回调EchoServer::HandleMessage()
+    std::function<void(Connection *, std::string &message)> onmessagecb_; // 回调EchoServer::HandleMessage()
     std::function<void(Connection *)> sendcompletecb_;             // 回调EchoServer::HandleSendComplete()
     std::function<void(EventLoop *)> timeoutcb_;                   // 回调EchoServer::HandleEpollTimeout()
 

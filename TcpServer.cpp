@@ -105,7 +105,7 @@ void TcpServer::seterrorconnectioncb(std::function<void(Connection*)> fn)
     errorconnectioncb_ = fn;
 }
 
-void TcpServer::setonmessagecb(std::function<void(Connection*, std::string &)> fn)
+void TcpServer::setonmessagecb(std::function<void(Connection*, std::string &message)> fn)
 {
     onmessagecb_ = fn;
 }

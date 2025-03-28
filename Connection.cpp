@@ -16,6 +16,7 @@ Connection::~Connection()
 {
     delete clientsock_;
     delete clientchannel_;
+    printf("Connection对象已析构。\n");
 }
 
 int Connection::fd() const                 // 返回客户端的fd

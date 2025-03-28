@@ -49,18 +49,17 @@ void EchoServer::HandleError(Connection *conn)
 // 处理客户端的请求报文，在TcpServer类中回调此函数
 void EchoServer::HandleMessage(Connection *conn, std::string &message)
 {
-    // 在这里，将经过若干步骤的运算
-    // message = "reply:" + message;        // 回显业务
-
-    // conn->send(message.data(), message.size()); // 把数据发送出去
-
+    // 把业务添加到线程池的任务队列中
     threadpool_.addtask(std::bind(&EchoServer::OnMessage, this, conn, message));
 }
 
-void EchoServer::OnMessage(Connection *conn, std::string& message)     // 处理客户端的请求报文，用于添加给线程池
+ // 处理客户端的请求报文，用于添加给线程池
+void EchoServer::OnMessage(Connection *conn, std::string& message)    
 {
     // 在这里，将经过若干步骤的运算
     message = "reply:" + message;        // 回显业务
+    sleep(2);
+    printf("处理完业务后，将使用connecion对象。\n");
     conn->send(message.data(), message.size()); // 把数据发送出去
 }
 

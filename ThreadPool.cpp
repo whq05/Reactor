@@ -91,3 +91,46 @@ int main()
 // g++ -o test ThreadPool.cpp -lpthread
 
 */
+
+//////////////////////////////////////////////////////////////////
+
+//////////////////////////////////////////////////////////////////
+class AA
+{
+public:
+    void show()
+    {
+        printf("你选择了貂蝉\n");
+    }
+
+    ~AA() 
+    {
+        printf("调用了析构函数。\n");
+    }
+};
+
+#include <memory>
+
+void fun(std::shared_ptr<AA> aa)
+{
+    sleep(5);
+    aa->show();
+}
+
+int main()
+{
+    ThreadPool tp(2,"TEST");
+
+    {
+        std::shared_ptr<AA> aa(new AA);
+        tp.addtask(std::bind(fun,aa));
+    }
+
+    sleep(10);   // 让线程有时间可以运行。
+
+    return 0;
+}
+//////////////////////////////////////////////////////////////////
+
+
+// g++ -o test ThreadPool.cpp -lpthread
