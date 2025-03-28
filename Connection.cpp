@@ -1,22 +1,22 @@
 #include "Connection.h"
 
-Connection::Connection(EventLoop *loop, Socket *clientsock) : loop_(loop), clientsock_(clientsock), disconnect_(false)
+Connection::Connection(const std::unique_ptr<EventLoop> &loop, std::unique_ptr<Socket> clientsock) 
+        : loop_(loop), clientsock_(std::move(clientsock)), disconnect_(false), clientchannel_(new Channel(clientsock_->fd(), loop_))
 {
     // 为新客户端连接准备读事件，并添加到epoll中
-    clientchannel_ = new Channel(clientsock->fd(), loop_); 
+    // clientchannel_ = new Channel(clientsock_->fd(), loop_); 
     clientchannel_->setreadcallback(std::bind(&Connection::onmessage, this));
     clientchannel_->setclosecallback(std::bind(&Connection::closecallback, this));
     clientchannel_->seterrorcallback(std::bind(&Connection::errorcallback, this));
     clientchannel_->setwritecallback(std::bind(&Connection::writecallback, this));
-    // clientchannel_->useet();                 // 客户端连上来的fd采用边缘触发
+    clientchannel_->useet();                 // 客户端连上来的fd采用边缘触发
     clientchannel_->enablereading();        // 让epoll_wait()监视clientchannel的读事件
 }
 
 Connection::~Connection()
 {
-    delete clientsock_;
-    delete clientchannel_;
-    printf("Connection对象已析构。\n");
+    // delete clientsock_;
+    // delete clientchannel_;
 }
 
 int Connection::fd() const                 // 返回客户端的fd

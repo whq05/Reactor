@@ -45,8 +45,6 @@ void Epoll::removechannel(Channel *ch)
 {
     if (ch->inepoll())  // 如果channel已经在树上了
     {
-        printf("removechannel()\n");
-
         if (epoll_ctl(epollfd_, EPOLL_CTL_DEL, ch->fd(), 0) == -1)
         {
                 perror("epoll_ctl() failed.\n"); 

@@ -58,8 +58,6 @@ void EchoServer::OnMessage(spConnection conn, std::string& message)
 {
     // 在这里，将经过若干步骤的运算
     message = "reply:" + message;        // 回显业务
-    sleep(2);
-    printf("处理完业务后，将使用connecion对象。\n");
     conn->send(message.data(), message.size()); // 把数据发送出去
 }
 

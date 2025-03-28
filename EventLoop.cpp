@@ -9,7 +9,7 @@ EventLoop::EventLoop() : ep_(new Epoll())
  // 在析构函数中销毁ep_
 EventLoop::~EventLoop()      
 {
-    delete ep_;
+    // delete ep_;
 }
 
 #include <unistd.h>

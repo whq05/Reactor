@@ -6,15 +6,16 @@
 #include "Acceptor.h"
 #include "Connection.h"
 #include "ThreadPool.h"
+#include <memory>
 
 class TcpServer
 {
 private:
-    EventLoop *mainloop_;       // 主事件循环
-    std::vector<EventLoop*> subloops_;          // 存放从事件循环的容器                                        // 一个TcpServer可以有多个事件循环，现在是单线程，暂时只用一个事件循环
-    Acceptor *acceptor_;                                           // 一个TcpServer只有一个Acceptor对象
-    ThreadPool *threadpool_;                                     // 线程池
+    std::unique_ptr<EventLoop> mainloop_;       // 主事件循环
+    std::vector<std::unique_ptr<EventLoop>> subloops_;          // 存放从事件循环的容器                                        // 一个TcpServer可以有多个事件循环，现在是单线程，暂时只用一个事件循环
+    Acceptor acceptor_;                                           // 一个TcpServer只有一个Acceptor对象
     int threadnum_;     // 线程池的大小，即从事件循环的个数
+    ThreadPool threadpool_;                                     // 线程池
     std::map<int, spConnection> conns_;                            // 一个TcpServer有多个Connection对象，存放在map容器中
     std::function<void(spConnection)> newconnectioncb_;            // 回调EchoServer::HandleNewConnection()
     std::function<void(spConnection)> closeconnectioncb_;          // 回调EchoServer::HandleClose()
@@ -29,7 +30,7 @@ public:
 
     void start(); // 运行事件循环
 
-    void newconnection(Socket *clientsock);                 // 处理新客户端连接请求，在Acceptor类中回调此函数
+    void newconnection(std::unique_ptr<Socket> clientsock);                 // 处理新客户端连接请求，在Acceptor类中回调此函数
     void closeconnection(spConnection conn);                 // 关闭客户端的连接，在Connection类中回调此函数
     void errorconnection(spConnection conn);                 // 客户端的连接错误，在Connection类中回调此函数
     void onmessage(spConnection conn, std::string &message); // 处理客户端发送过来的消息，在Connection类中回调此函数
