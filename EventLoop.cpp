@@ -12,8 +12,12 @@ EventLoop::~EventLoop()
     delete ep_;
 }
 
+#include <unistd.h>
+#include <sys/syscall.h>
+
 void EventLoop::run()         // 运行事件循环
 {
+    // printf("EventLoop::run() thread is %ld.\n",syscall(SYS_gettid));
     while (true) // 事件循环
     {
         std::vector<Channel *> channels = ep_->loop(); // 存放epoll_wait()返回事件

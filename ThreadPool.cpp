@@ -10,7 +10,6 @@ ThreadPool::ThreadPool(size_t threadnum) : stop_(false)
         threads_.emplace_back([this]
         {
             printf("create thread(%ld).\n",syscall(SYS_gettid));     // 显示线程ID
-            std::cout << "子线程：" << std::this_thread::get_id() << std::endl;
 
             while (stop_ == false)
             {
@@ -63,6 +62,7 @@ ThreadPool::~ThreadPool()
         th.join();
 }
 
+/*
 void show(int no, const std::string &name)
 {
     printf("你选择了%d号英雄%s。\n",no,name.c_str());
@@ -89,3 +89,5 @@ int main()
 }
 
 // g++ -o test ThreadPool.cpp -lpthread
+
+*/

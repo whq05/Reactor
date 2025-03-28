@@ -1,6 +1,6 @@
 #include "EchoServer.h"
 
-EchoServer::EchoServer(const std::string &ip, const uint16_t port) : tcpserver_(ip, port)
+EchoServer::EchoServer(const std::string &ip, const uint16_t port, int threadnum) : tcpserver_(ip, port, threadnum)
 {
     // 以下代码不是必须的，业务关心什么事件，就指定相应的回调函数。
     tcpserver_.setnewconnectioncb(std::bind(&EchoServer::HandleNewConnection, this, std::placeholders::_1));
@@ -25,6 +25,7 @@ void EchoServer::Start()
 void EchoServer::HandleNewConnection(Connection *conn)
 {
     std::cout << "New Connection Come in." << std::endl;
+    printf("EchoServer::HandleNewConnection() thread is %ld.\n",syscall(SYS_gettid));
 
     // 根据业务的需求，在这里可以增加其它的代码
 }
@@ -48,14 +49,10 @@ void EchoServer::HandleError(Connection *conn)
 // 处理客户端的请求报文，在TcpServer类中回调此函数
 void EchoServer::HandleMessage(Connection *conn, std::string &message)
 {
+
+    printf("EchoServer::HandleMessage() thread is %ld.\n",syscall(SYS_gettid));
     // 在这里，将经过若干步骤的运算
     message = "reply:" + message;
-
-    /*
-    int len = message.size();                   // 计算回应报文的大小
-    std::string tmpbuf((char*)&len, 4);     // 把报文头部填充到回应报文中
-    tmpbuf.append(message);                 // 把报文内容填充到回应报文中
-    */
 
     conn->send(message.data(), message.size()); // 把数据发送出去
 }

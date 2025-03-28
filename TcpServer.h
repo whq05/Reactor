@@ -5,12 +5,16 @@
 #include "Channel.h"
 #include "Acceptor.h"
 #include "Connection.h"
+#include "ThreadPool.h"
 
 class TcpServer
 {
 private:
-    EventLoop loop_;                                               // 一个TcpServer可以有多个事件循环，现在是单线程，暂时只用一个事件循环
+    EventLoop *mainloop_;       // 主事件循环
+    std::vector<EventLoop*> subloops_;          // 存放从事件循环的容器                                        // 一个TcpServer可以有多个事件循环，现在是单线程，暂时只用一个事件循环
     Acceptor *acceptor_;                                           // 一个TcpServer只有一个Acceptor对象
+    ThreadPool *threadpool_;                                     // 线程池
+    int threadnum_;     // 线程池的大小，即从事件循环的个数
     std::map<int, Connection *> conns_;                            // 一个TcpServer有多个Connection对象，存放在map容器中
     std::function<void(Connection *)> newconnectioncb_;            // 回调EchoServer::HandleNewConnection()
     std::function<void(Connection *)> closeconnectioncb_;          // 回调EchoServer::HandleClose()
@@ -20,7 +24,7 @@ private:
     std::function<void(EventLoop *)> timeoutcb_;                   // 回调EchoServer::HandleEpollTimeout()
 
 public:
-    TcpServer(const std::string &ip, uint16_t port);
+    TcpServer(const std::string &ip, uint16_t port, int threadnum = 3);
     ~TcpServer();
 
     void start(); // 运行事件循环
