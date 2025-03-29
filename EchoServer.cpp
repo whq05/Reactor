@@ -49,8 +49,6 @@ void EchoServer::HandleError(spConnection conn)
 // 处理客户端的请求报文，在TcpServer类中回调此函数
 void EchoServer::HandleMessage(spConnection conn, std::string &message)
 {
-    printf("EchoServer::HandleMessage() thread is %ld.\n",syscall(SYS_gettid)); 
-
     if (threadpool_.size() == 0)
     {
         // 如果没有工作线程，表示在IO线程中计算
@@ -66,7 +64,6 @@ void EchoServer::HandleMessage(spConnection conn, std::string &message)
  // 处理客户端的请求报文，用于添加给线程池
 void EchoServer::OnMessage(spConnection conn, std::string& message)    
 {
-    printf("EchoServer::OnMessage() thread is %ld.\n",syscall(SYS_gettid));
     // 在这里，将经过若干步骤的运算
     message = "reply:" + message;        // 回显业务
     conn->send(message.data(), message.size()); // 把数据发送出去

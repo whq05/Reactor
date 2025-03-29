@@ -7,6 +7,7 @@
 #include "Buffer.h"
 #include <memory>
 #include <atomic>
+#include <sys/syscall.h>
 
 class Connection;
 using spConnection = std::shared_ptr<Connection>;
@@ -44,5 +45,8 @@ public:
     void setonmessagecallback(std::function<void(spConnection, std::string &)> fn); // 设置处理报文的回调函数
     void setsendcompletecallback(std::function<void(spConnection)> fn);             // 发送数据完成后的回调函数
 
-    void send(const char *data, size_t size); // 发送数据
+    // 发送数据，不管在任何线程中，都是调用此函数发送数据
+    void send(const char *data, size_t size); 
+    // 发送数据，如果当前线程是IO线程，直接调用此函数，如果是工作线程，将把此函数传给IO线程去执行
+    void sendinloop(const char *data, size_t size);
 };

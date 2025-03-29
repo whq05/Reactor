@@ -111,7 +111,7 @@ void Connection::onmessage()
     }
 }
 
-// 发送数据
+// 发送数据，不管在任何线程中，都是调用此函数发送数据
 void Connection::send(const char *data, size_t size)
 {
     if (disconnect_==true) 
@@ -119,6 +119,26 @@ void Connection::send(const char *data, size_t size)
         printf("客户端连接已断开了，send()直接返回。\n"); 
         return;
     }
+
+    if (loop_->isinloopthread())    // 判断当前线程是否为事件循环线程（IO线程）
+    {
+        // 如果当前线程是IO线程，直接调用sendinloop()发送数据
+        printf("send() 在事件循环的线程中。\n");
+        sendinloop(data, size);
+    }
+    else
+    {
+        // 如果当前线程不是IO线程，调用EventLoop::queueinloop()，把sendinloop()交给事件循环线程去执行
+        printf("send() 不在事件循环的线程中。\n");
+        loop_->queueinloop(std::bind(&Connection::sendinloop, this, data, size));
+    }
+
+
+}
+
+// 发送数据，如果当前线程是IO线程，直接调用此函数，如果是工作线程，将把此函数传给IO线程去执行
+void Connection::sendinloop(const char *data, size_t size)
+{
     outputbuffer_.appendwithhead(data, size);   // 把需要发送的数据保存到Connection的发送缓冲区中
     clientchannel_->enablewriting();    // 注册写事件
 }
