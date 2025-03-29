@@ -66,7 +66,8 @@ void EchoServer::OnMessage(spConnection conn, std::string& message)
 {
     // 在这里，将经过若干步骤的运算
     message = "reply:" + message;        // 回显业务
-    conn->send(message.data(), message.size()); // 把数据发送出去
+    // conn->send(message.data(), message.size()); // 把数据发送出去
+    conn->send(std::move(message));  // 使用 std::move 触发移动
 }
 
 // 数据发送完成后，在TcpServer类中回调此函数

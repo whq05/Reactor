@@ -5,6 +5,7 @@
 #include "InetAddress.h"
 #include "Channel.h"
 #include "Buffer.h"
+#include "Timestamp.h"
 #include <memory>
 #include <atomic>
 #include <sys/syscall.h>
@@ -26,6 +27,7 @@ private:
     std::function<void(spConnection)> errorcallback_;                    // fd_发生了错误的回调函数，将回调TcpServer::errorconnection()
     std::function<void(spConnection, std::string &)> onmessagecallback_; // 处理报文的回调函数，将回调TcpServer::onmessage()
     std::function<void(spConnection)> sendcompletecallback_;             // 数据发送完成后，将回调TcpServer::sendcomplete()
+    Timestamp lastatime_;   // 时间戳，创建Connection对象时为当前时间，每接收到一个报文，把时间戳更新为当前时间
 
 public:
     Connection(EventLoop *loop, std::unique_ptr<Socket> clientsock);
@@ -46,7 +48,10 @@ public:
     void setsendcompletecallback(std::function<void(spConnection)> fn);             // 发送数据完成后的回调函数
 
     // 发送数据，不管在任何线程中，都是调用此函数发送数据
-    void send(const char *data, size_t size); 
-    // 发送数据，如果当前线程是IO线程，直接调用此函数，如果是工作线程，将把此函数传给IO线程去执行
-    void sendinloop(const char *data, size_t size);
+    // void send(const char *data, size_t size); 
+    // // 发送数据，如果当前线程是IO线程，直接调用此函数，如果是工作线程，将把此函数传给IO线程去执行
+    // void sendinloop(const std::string &message);
+    void send(std::string&& message);  // 参数为右值引用
+    void sendinloop(std::string message);  // 按值接收（支持移动）
+
 };

@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
     printf("connect ok.\n");
     // printf("开始时间：%d",time(0));
 
-    for (int ii = 0; ii < 1; ii++)
+    for (int ii = 0; ii < 10; ii++)
     {
         memset(buf, 0, sizeof(buf));
         sprintf(buf, "you will get %d dollars", ii);
@@ -61,13 +61,7 @@ int main(int argc, char *argv[])
             return -1;
         }
 
-    }
-    
-    for (int ii = 0; ii < 1; ii++)
-    {
-        int len;
         recv(sockfd, &len, 4, 0);       // 先读取4字节的报文头部
-        
         memset(buf, 0, sizeof(buf));
         if (recv(sockfd, buf, len, 0) <= 0) // 读取报文内容
         {
@@ -77,9 +71,8 @@ int main(int argc, char *argv[])
         }
 
         printf("recv:%s\n", buf);
+sleep(1);
     }
-
-    // sleep(100);
 
     // printf("结束时间：%d",time(0));
 }
