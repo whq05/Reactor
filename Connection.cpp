@@ -1,6 +1,6 @@
 #include "Connection.h"
 
-Connection::Connection(const std::unique_ptr<EventLoop> &loop, std::unique_ptr<Socket> clientsock) 
+Connection::Connection(EventLoop *loop, std::unique_ptr<Socket> clientsock) 
         : loop_(loop), clientsock_(std::move(clientsock)), disconnect_(false), clientchannel_(new Channel(clientsock_->fd(), loop_))
 {
     // 为新客户端连接准备读事件，并添加到epoll中

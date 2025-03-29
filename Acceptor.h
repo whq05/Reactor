@@ -9,13 +9,13 @@
 class Acceptor
 {
 private:
-    const std::unique_ptr<EventLoop> &loop_;       // Acceptor对应的事件循环，在构造函数中传入
+    EventLoop *loop_;       // Acceptor对应的事件循环，在构造函数中传入
     Socket servsock_;      // 服务端用于监听的socket，在构造函数中创建
     Channel acceptchannel_;  // 服务端用于监听的channel，在构造函数中创建
     std::function<void(std::unique_ptr<Socket>)> newconnectioncb_;      // 处理新客户端连接请求的回调函数，将指向TcpServer::newconnection()
 
 public:
-    Acceptor(const std::unique_ptr<EventLoop>& loop, const std::string &ip, uint16_t port);
+    Acceptor(EventLoop *loop, const std::string &ip, uint16_t port);
     ~Acceptor();
 
     void newconnection();    // 处理新客户端连接请求

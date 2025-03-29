@@ -16,7 +16,7 @@ int main(int argc, char *argv[])
     // TcpServer tcpserver(argv[1], atoi(argv[2]));
     // tcpserver.start();      // 运行事件循环
 
-    EchoServer echoserver(argv[1], atoi(argv[2]));
+    EchoServer echoserver(argv[1], atoi(argv[2]), 3, 3);
     echoserver.Start();      // 运行事件循环
 
     return 0;

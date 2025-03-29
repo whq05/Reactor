@@ -50,6 +50,12 @@ void ThreadPool::addtask(std::function<void()> task)
     condition_.notify_one(); // 唤醒一个线程
 }
 
+// 获取线程池的大小
+size_t ThreadPool::size() const
+{
+    return threads_.size();
+}
+
 // 在析构函数中将停止线程
 ThreadPool::~ThreadPool()
 {

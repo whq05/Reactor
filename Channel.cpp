@@ -1,7 +1,7 @@
 #include "Channel.h"
 
 // 构造函数
-Channel::Channel(int fd, const std::unique_ptr<EventLoop> &loop) : fd_(fd), loop_(loop)
+Channel::Channel(int fd, EventLoop *loop) : fd_(fd), loop_(loop)
 {
 }
 
