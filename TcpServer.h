@@ -25,8 +25,10 @@ private:
     std::function<void(spConnection)> sendcompletecb_;             // 回调EchoServer::HandleSendComplete()
     std::function<void(EventLoop *)> timeoutcb_;                   // 回调EchoServer::HandleEpollTimeout()
 
+    uint16_t sep_;  // 报文的分隔符：0-无分隔符(固定长度、视频会议)；1-四字节的报头；2-"\r\n\r\n"分隔符（http协议）
+
 public:
-    TcpServer(const std::string &ip, uint16_t port, int threadnum = 3);
+    TcpServer(const std::string &ip, uint16_t port, int threadnum = 3, uint16_t sep = 0);
     ~TcpServer();
 
     void start(); // 运行事件循环

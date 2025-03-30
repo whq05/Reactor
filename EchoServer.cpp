@@ -1,7 +1,7 @@
 #include "EchoServer.h"
 
-EchoServer::EchoServer(const std::string &ip, const uint16_t port, int subthreadnum, int workthreadnum) 
-            : tcpserver_(ip, port, subthreadnum), threadpool_(workthreadnum, "WORKS")
+EchoServer::EchoServer(const std::string &ip, const uint16_t port, int subthreadnum, int workthreadnum, uint16_t sep) 
+            : tcpserver_(ip, port, subthreadnum, sep), threadpool_(workthreadnum, "WORKS")
 {
     // 以下代码不是必须的，业务关心什么事件，就指定相应的回调函数。
     tcpserver_.setnewconnectioncb(std::bind(&EchoServer::HandleNewConnection, this, std::placeholders::_1));

@@ -42,8 +42,10 @@ int main(int argc, char *argv[])
 
     printf("connect ok.\n");
     // printf("开始时间：%d",time(0));
-    
-    for (int ii = 0; ii < 10; ii++)
+
+    /*
+    // 对应sep_ = 1
+    for (int ii = 0; ii < 100; ii++)
     {
         memset(buf, 0, sizeof(buf));
         sprintf(buf, "you will get %d dollars", ii);
@@ -71,8 +73,41 @@ int main(int argc, char *argv[])
         }
 
         printf("recv:%s\n", buf);
-sleep(1);
+// sleep(1);
+    }
+    */
+
+    // 对应sep_ = 0
+    for (int ii=0;ii<100;ii++)
+    {
+        memset(buf,0,sizeof(buf));
+        sprintf(buf, "you will get %d dollars", ii);
+
+        send(sockfd,buf,strlen(buf),0);  // 把请求报文发送给服务端。
+        
+        memset(buf,0,sizeof(buf));
+        recv(sockfd,buf,1024,0);           // 读取报文内容。
+
+        printf("recv:%s\n",buf);
+// sleep(1);
     }
 
+   /*
+    // 对应sep_ = 2
+    for (int ii=0;ii<100;ii++)
+    {
+        memset(buf,0,sizeof(buf));
+        sprintf(buf, "you will get %d dollars\r\n\r\n", ii);
+
+        send(sockfd,buf,strlen(buf),0);  // 把请求报文发送给服务端。
+        
+        memset(buf,0,sizeof(buf));
+        
+        recv(sockfd,buf,1024,0);           // 读取报文内容。
+        buf[strlen(buf)-4]='\0';
+        printf("recv:%s\n",buf);
+// sleep(1);
+    }
+    */
     // printf("结束时间：%d",time(0));
 }

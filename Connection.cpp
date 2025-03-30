@@ -1,7 +1,8 @@
 #include "Connection.h"
 
-Connection::Connection(EventLoop *loop, std::unique_ptr<Socket> clientsock)
-    : loop_(loop), clientsock_(std::move(clientsock)), disconnect_(false), clientchannel_(new Channel(clientsock_->fd(), loop_))
+Connection::Connection(EventLoop *loop, std::unique_ptr<Socket> clientsock, uint16_t sep)
+    : loop_(loop), clientsock_(std::move(clientsock)), disconnect_(false), clientchannel_(new Channel(clientsock_->fd(), loop_)),
+      inputbuffer_(sep), outputbuffer_(sep)
 {
     // 为新客户端连接准备读事件，并添加到epoll中
     // clientchannel_ = new Channel(clientsock_->fd(), loop_);
@@ -84,23 +85,17 @@ void Connection::onmessage()
         }
         else if (nread == -1 && ((errno == EAGAIN) || (errno == EWOULDBLOCK))) // 全部的数据已读取完毕
         {
-            while (true)
+            std::string message;
+            while (true)    // 从接收缓冲区中拆分出客户端的请求消息
             {
-                //////////////////////////////////////////////////////////////
-                // 可以把以下代码封装在Buffer类中，还可以支持固定长度、指定报文长度和分隔符等多种格式
-                int len;
-                memcpy(&len, inputbuffer_.data(), 4); // 从inputbuffer中获取报文头部
-                // 如果inputbuffer中的数据量小于报文头部，说明inputbuffer中的报文内容不完整
-                if (inputbuffer_.size() < len + 4)
+                if (inputbuffer_.pickmessage(message) == false) // 接收缓冲区中没有报文，退出循环
+                {
                     break;
-
-                std::string message(inputbuffer_.data() + 4, len); // 从inputbuffer中获取一个报文
-                inputbuffer_.erase(0, len + 4);                    // 从inputbuffer中删除刚才已获取的报文
-                //////////////////////////////////////////////////////////////
+                }
 
                 printf("message (eventfd=%d):%s\n", fd(), message.c_str());
                 lastatime_ = Timestamp::now();
-                // std::cout << "lastatime=" << lastatime_.tostring() << std::endl;
+
                 onmessagecallback_(shared_from_this(), message); // 回调TcpServer::onmessage()处理客户端的请求消息
             }
             break;
@@ -185,7 +180,7 @@ void Connection::sendinloop(std::string message)
 {
     // 此处 message 是通过移动构造获取的数据，无拷贝
     // printf("Connection::sendinloop message = %s\n", message.c_str());
-    outputbuffer_.appendwithhead(message.data(), message.size());
+    outputbuffer_.appendwithsep(message.data(), message.size());
     clientchannel_->enablewriting();
 }
 

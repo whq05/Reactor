@@ -32,7 +32,7 @@ private:
     Timestamp lastatime_;   // 时间戳，创建Connection对象时为当前时间，每接收到一个报文，把时间戳更新为当前时间
 
 public:
-    Connection(EventLoop *loop, std::unique_ptr<Socket> clientsock);
+    Connection(EventLoop *loop, std::unique_ptr<Socket> clientsock, uint16_t sep);
     ~Connection();
 
     int fd() const;         // 返回客户端的fd
@@ -60,6 +60,6 @@ public:
     void send(std::string&& message);  // 参数为右值引用
     // 发送数据，如果当前线程是IO线程，直接调用此函数，如果是工作线程，将把此函数传给IO线程去执行
     void sendinloop(std::string message);  // 按值接收（支持移动）
-    
+
     bool timeout(time_t now, int val);  // 判断TCP连接是否超时（空闲太久）
 };

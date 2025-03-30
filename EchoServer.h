@@ -11,7 +11,7 @@ private:
     ThreadPool threadpool_;     // 工作线程池
 
 public:
-    EchoServer(const std::string &ip, const uint16_t port, int subthreadnum = 3, int workthreadnum = 5);
+    EchoServer(const std::string &ip, const uint16_t port, int subthreadnum = 3, int workthreadnum = 5, uint16_t sep = 0);
     ~EchoServer();
 
     void Start();   // 启动服务
