@@ -7,6 +7,7 @@
 #include "Connection.h"
 #include "ThreadPool.h"
 #include <memory>
+#include <functional>
 
 class TcpServer
 {
@@ -26,6 +27,8 @@ private:
     std::function<void(EventLoop *)> timeoutcb_;                   // 回调EchoServer::HandleEpollTimeout()
 
     uint16_t sep_;  // 报文的分隔符：0-无分隔符(固定长度、视频会议)；1-四字节的报头；2-"\r\n\r\n"分隔符（http协议）
+
+    std::map<uint32_t, EventLoop*> hash_ring_;  // 一致性哈希环
 
 public:
     TcpServer(const std::string &ip, uint16_t port, int threadnum = 3, uint16_t sep = 0);

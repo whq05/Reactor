@@ -16,6 +16,19 @@ TcpServer::TcpServer(const std::string &ip, uint16_t port, int threadnum, uint16
         subloops_[ii]->settimercallback(std::bind(&TcpServer::removeconn, this, std::placeholders::_1));    // 设置清理空闲TCP连接的回调函数
         threadpool_.addtask(std::bind(&EventLoop::run, subloops_[ii].get()));    // 在线程池中运行从事件循环
     }
+
+    // 构建一致性哈希环（添加虚拟节点）
+    for (int ii = 0; ii < threadnum_; ii++) 
+    {
+        EventLoop* subloop = subloops_[ii].get();
+        // 每个EventLoop添加100个虚拟节点
+        for (int j = 0; j < 100; j++) {
+            std::string node_key = std::to_string(ii) + "_" + std::to_string(j);
+            uint32_t hash = std::hash<std::string>{}(node_key);
+            hash_ring_.emplace(hash, subloop);
+        }
+    }
+
 }
 
 TcpServer::~TcpServer()
@@ -51,8 +64,20 @@ void TcpServer::stop()
 // 处理新客户端连接请求
 void TcpServer::newconnection(std::unique_ptr<Socket> clientsock)  
 {
+    // 计算客户端标识的哈希值（这里用fd()，可根据需求改用IP+端口）
+    uint32_t key_hash = std::hash<int>{}(clientsock->fd());
+
+    // 查找最近的哈希节点
+    auto it = hash_ring_.lower_bound(key_hash);
+    if (it == hash_ring_.end()) 
+    {  
+        // 超出范围则选择第一个节点
+        it = hash_ring_.begin();
+    }
+    EventLoop* target_loop = it->second;
+
     // 把新建的conn分配给从事件循环
-    spConnection conn(new Connection(subloops_[clientsock->fd() % threadnum_].get(), std::move(clientsock), sep_));
+    spConnection conn(new Connection(target_loop, std::move(clientsock), sep_));
     conn->setclosecallback(std::bind(&TcpServer::closeconnection, this, std::placeholders::_1));
     conn->seterrorcallback(std::bind(&TcpServer::errorconnection, this, std::placeholders::_1));
     conn->setonmessagecallback(std::bind(&TcpServer::onmessage, this, std::placeholders::_1, std::placeholders::_2)); 

@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
     */
 
     // 对应sep_ = 0
-    for (int ii=0;ii<100;ii++)
+    for (int ii=0;ii<10;ii++)
     {
         memset(buf,0,sizeof(buf));
         sprintf(buf, "you will get %d dollars", ii);
