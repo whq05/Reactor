@@ -15,8 +15,7 @@ Connection::Connection(EventLoop *loop, std::unique_ptr<Socket> clientsock)
 
 Connection::~Connection()
 {
-    // delete clientsock_;
-    // delete clientchannel_;
+    printf("conn已析构。\n");
 }
 
 int Connection::fd() const // 返回客户端的fd
@@ -100,9 +99,9 @@ void Connection::onmessage()
                 //////////////////////////////////////////////////////////////
 
                 printf("message (eventfd=%d):%s\n", fd(), message.c_str());
-                lastatime_ = Timestamp::now(); // 更新Connection的时间戳
-                // std::cout << "lastatime=" << lastatime_.tostring() << std::endl;
-
+                // updatelastatime_();  
+                lastatime_ = Timestamp::now();
+                std::cout << "lastatime=" << lastatime_.tostring() << std::endl;
                 onmessagecallback_(shared_from_this(), message); // 回调TcpServer::onmessage()处理客户端的请求消息
             }
             break;
@@ -203,4 +202,17 @@ void Connection::writecallback() // 处理写事件的回调函数，供Channel�
         clientchannel_->disablewriting();
         sendcompletecallback_(shared_from_this());
     }
+}
+
+// 更新Connection的时间戳
+// void Connection::updatelastatime_()  
+// {
+//     lastatime_ = Timestamp::now(); 
+// }
+
+// 判断TCP连接是否超时（空闲太久）
+bool Connection::timeout(time_t now, int val)  
+{
+    // std::cout << "lastatime=" << lastatime_.tostring() << std::endl;
+    return now - lastatime_.toint() > val;
 }

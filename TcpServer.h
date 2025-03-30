@@ -16,6 +16,7 @@ private:
     Acceptor acceptor_;                                           // 一个TcpServer只有一个Acceptor对象
     int threadnum_;     // 线程池的大小，即从事件循环的个数
     ThreadPool threadpool_;                                     // 线程池
+    std::mutex mmutex_;      // 保护conns_的互斥锁
     std::map<int, spConnection> conns_;                            // 一个TcpServer有多个Connection对象，存放在map容器中
     std::function<void(spConnection)> newconnectioncb_;            // 回调EchoServer::HandleNewConnection()
     std::function<void(spConnection)> closeconnectioncb_;          // 回调EchoServer::HandleClose()
@@ -43,4 +44,6 @@ public:
     void setonmessagecb(std::function<void(spConnection, std::string &)> fn);
     void setsendcompletecb(std::function<void(spConnection)> fn);
     void settimeoutcb(std::function<void(EventLoop *)> fn);
+
+    void removeconn(int fd);    // 删除conns_中的Connection对象，在EventLoop::handletimer()中将回调此函数
 };
