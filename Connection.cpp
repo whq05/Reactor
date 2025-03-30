@@ -15,7 +15,7 @@ Connection::Connection(EventLoop *loop, std::unique_ptr<Socket> clientsock)
 
 Connection::~Connection()
 {
-    printf("conn已析构。\n");
+    // printf("conn已析构。\n");
 }
 
 int Connection::fd() const // 返回客户端的fd
@@ -99,9 +99,8 @@ void Connection::onmessage()
                 //////////////////////////////////////////////////////////////
 
                 printf("message (eventfd=%d):%s\n", fd(), message.c_str());
-                // updatelastatime_();  
                 lastatime_ = Timestamp::now();
-                std::cout << "lastatime=" << lastatime_.tostring() << std::endl;
+                // std::cout << "lastatime=" << lastatime_.tostring() << std::endl;
                 onmessagecallback_(shared_from_this(), message); // 回调TcpServer::onmessage()处理客户端的请求消息
             }
             break;
@@ -169,13 +168,13 @@ void Connection::send(std::string &&message)
     if (loop_->isinloopthread())
     {
         // 当前是 IO 线程，直接移动 message
-        printf("send() 在事件循环的线程中。\n");
+        // printf("send() 在事件循环的线程中。\n");
         sendinloop(std::move(message));
     }
     else
     {
         // 跨线程传递，将 message 移动到 bind 对象中
-        printf("send() 不在事件循环的线程中。\n");
+        // printf("send() 不在事件循环的线程中。\n");
         loop_->queueinloop(std::bind(&Connection::sendinloop, this, std::move(message)));
     }
 
@@ -203,12 +202,6 @@ void Connection::writecallback() // 处理写事件的回调函数，供Channel�
         sendcompletecallback_(shared_from_this());
     }
 }
-
-// 更新Connection的时间戳
-// void Connection::updatelastatime_()  
-// {
-//     lastatime_ = Timestamp::now(); 
-// }
 
 // 判断TCP连接是否超时（空闲太久）
 bool Connection::timeout(time_t now, int val)  

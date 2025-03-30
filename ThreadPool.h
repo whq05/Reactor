@@ -33,6 +33,9 @@ public:
     // 获取线程池的大小
     size_t size() const;
 
+    // 停止线程
+    void stop();
+
     // 在析构函数中将停止线程
     ~ThreadPool();
 };

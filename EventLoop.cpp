@@ -13,7 +13,7 @@ int createtimerfd(int sec = 30)
 
 // 在构造函数中创建Epoll对象ep_
 EventLoop::EventLoop(bool mainloop, int timetvl, int timeout) : ep_(new Epoll()), mainloop_(mainloop),
-        timetvl_(timetvl), timeout_(timeout),
+        timetvl_(timetvl), timeout_(timeout), stop_(false),
         wakeupfd_(eventfd(0, EFD_NONBLOCK)), wakeupchannel_(new Channel(wakeupfd_, this)),
         timerfd_(createtimerfd(timetvl_)), timerchannel_(new Channel(timerfd_, this))     
 {
@@ -35,7 +35,7 @@ void EventLoop::run()
 {
     // printf("EventLoop::run() thread is %ld.\n",syscall(SYS_gettid));
     threadid_ = syscall(SYS_gettid);    // 获取事件循环所在线程的id
-    while (true) // 事件循环
+    while (stop_ == false) // 事件循环
     {
         std::vector<Channel *> channels = ep_->loop(10*1000);   // 等待监视的fd有事件发生
         
@@ -53,6 +53,12 @@ void EventLoop::run()
         }
 
     }
+}
+
+void EventLoop::stop()        // 停止事件循环
+{
+    stop_ = true;
+    wakeup();   // 唤醒事件循环，如果没有这行代码，事件循环将在下次闹钟响时或epoll_wait()超时时才会停下来
 }
 
 // 把channel添加/更新到红黑树上，channel中有fd，也有需要监视的事件
@@ -135,16 +141,16 @@ void EventLoop::handletimer()
     else
     {
         // printf("从事件循环的闹钟时间到了。\n");
-        printf("EventLoop::handletimer() thread is %ld. fd ",syscall(SYS_gettid));
+        // printf("EventLoop::handletimer() thread is %ld. fd ",syscall(SYS_gettid));
         time_t now = time(0);       // 获取当前时间
         for (auto it = conns_.begin(); it != conns_.end(); )
         {
             int fd = it->first;
             auto &conn = it->second;
-            printf(" %d", fd);  
+            // printf(" %d", fd);  
             if (conn->timeout(now, timeout_))
             {
-                printf("EventLoop::handletimer()1  thread is %ld.\n",syscall(SYS_gettid)); 
+                // printf("EventLoop::handletimer()1  thread is %ld.\n",syscall(SYS_gettid)); 
                 
                 {
                     std::lock_guard<std::mutex> gd(mmutex_);
@@ -158,7 +164,7 @@ void EventLoop::handletimer()
             }
           
         }
-        printf("\n");
+        // printf("\n");
     }
 
 }
@@ -166,7 +172,7 @@ void EventLoop::handletimer()
 // 把Connection对象保存在conns_中
 void EventLoop::newconnection(spConnection conn) 
 {
-    printf("EventLoop::newconnection() thread is %ld.\n",syscall(SYS_gettid)); 
+    // printf("EventLoop::newconnection() thread is %ld.\n",syscall(SYS_gettid)); 
     {
         std::lock_guard<std::mutex> gd(mmutex_);
         conns_[conn->fd()] = conn;

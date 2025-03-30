@@ -6,6 +6,7 @@
 #include <queue>
 #include <mutex>
 #include <map>
+#include <atomic>
 #include <sys/eventfd.h>
 #include <sys/syscall.h>
 #include <sys/timerfd.h>    // 定时器需要包含这个头文件
@@ -34,18 +35,14 @@ private:
     std::mutex mmutex_;  // 保护conns_的互斥锁
     std::map<int ,spConnection> conns_;         // 存放运行在该事件循环上全部的Connection对象
     std::function<void(int)> timercallback_;    // 删除TcpServer中超时的Connection对象，将被设置为TcpServer::removeconn()
-    // 1、在事件循环中增加map<int,spConnect> conns_容器，存放运行在该事件循环上全部的Connection对象。
-    // 2、如果闹钟时间到了，遍历conns_，判断每个Connection对象是否超时。
-    // 3、如果超时了，从conns_中删除Connection对象；
-    // 4、还需要从TcpServer.conns_中删除Connection对象。
-    // 5、TcpServer和EventLoop的map容器需要加锁。
-    // 6、闹钟时间间隔和超时时间参数化。
+    std::atomic<bool> stop_;      // 初始值为false，如果设置为true，表示停止事件循环
 
 public:
     EventLoop(bool mainloop, int timetvl = 30, int timeout = 80);        // 在构造函数中创建Epoll对象ep_
     ~EventLoop();       // 在析构函数中销毁ep_
 
     void run();         // 运行事件循环
+    void stop();        // 停止事件循环
 
     void updatechannel(Channel *ch);        // 把channel添加/更新到红黑树上，channel中有fd，也有需要监视的事件
     void removechannel(Channel *ch);        // 从红黑树上删除channel

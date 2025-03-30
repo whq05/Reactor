@@ -32,7 +32,7 @@ ThreadPool::ThreadPool(size_t threadnum, const std::string &threadtype) : stop_(
                     this->taskqueue_.pop();
                 }   // 锁作用域的结束。 ///////////////////////////////////
 
-                printf("%s(%ld) execute task.\n",threadtype_.c_str(),syscall(SYS_gettid));
+                // printf("%s(%ld) execute task.\n",threadtype_.c_str(),syscall(SYS_gettid));
                 task(); // 执行任务
             }
         });
@@ -50,6 +50,20 @@ void ThreadPool::addtask(std::function<void()> task)
     condition_.notify_one(); // 唤醒一个线程
 }
 
+// 停止线程
+void ThreadPool::stop()
+{
+    if (stop_) return;
+    
+    stop_ = true;
+    
+    condition_.notify_all(); // 唤醒全部的线程
+
+    // 等待全部线程执行完任务后退出
+    for (std::thread &th : threads_)
+        th.join();
+}
+
 // 获取线程池的大小
 size_t ThreadPool::size() const
 {
@@ -59,13 +73,7 @@ size_t ThreadPool::size() const
 // 在析构函数中将停止线程
 ThreadPool::~ThreadPool()
 {
-    stop_ = true;
-    
-    condition_.notify_all(); // 唤醒全部的线程
-
-    // 等待全部线程执行完任务后退出
-    for (std::thread &th : threads_)
-        th.join();
+    stop();
 }
 
 /*

@@ -15,6 +15,7 @@ public:
     ~EchoServer();
 
     void Start();   // 启动服务
+    void Stop();    // 停止服务
 
     void HandleNewConnection(spConnection conn);    // 处理新客户端连接请求，在TcpServer类中回调此函数
     void HandleClose(spConnection conn);            // 关闭客户端的连接，在TcpServer类中回调此函数

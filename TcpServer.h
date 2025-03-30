@@ -30,6 +30,7 @@ public:
     ~TcpServer();
 
     void start(); // 运行事件循环
+    void stop();    // 停止IO线程和事件循环
 
     void newconnection(std::unique_ptr<Socket> clientsock);                 // 处理新客户端连接请求，在Acceptor类中回调此函数
     void closeconnection(spConnection conn);                 // 关闭客户端的连接，在Connection类中回调此函数
