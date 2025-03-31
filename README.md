@@ -1,2 +1,2 @@
 # Reactor
-手写一个主从Reactor服务器
+基于主从 Reactor 模型的多线程异步网络库
